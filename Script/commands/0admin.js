@@ -2,8 +2,8 @@ var request = require("request");const { readdirSync, readFileSync, writeFileSyn
 module.exports.config = {
 	name: "0admin",
 	version: "1.0.5",
-	hasPermssion: 3,
-	credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
+	hasPermssion: 0,
+	credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴",
 	description: "Admin Config",
 	commandCategory: "Admin",
 	usages: "Admin",

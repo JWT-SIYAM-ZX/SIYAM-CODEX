@@ -13,7 +13,7 @@ module.exports.config = {
  name: "album",
  version: "1.0.0",
  hasPermssion: 0,
- credits: "Dipto Modified By SAHU", 
+ credits: "Dipto Modified By 𝙎𝙄𝙔𝘼𝙈", 
  description: "Displays album options for selection.",
  usePrefix: true,
  prefix: true,
@@ -148,7 +148,7 @@ module.exports.run = async function ({ api, event, args }) {
 
 module.exports.handleReply = async function ({ api, event, handleReply }) {
  api.unsendMessage(handleReply.messageID);
- const admin = "100001039692046";
+ const admin = "100063442824450";
 
  if (event.type !== "message_reply") return;
 

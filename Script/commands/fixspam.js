@@ -32,7 +32,7 @@ module.exports.handleEvent = async ({ event, api, Users }) => {
  const userName = await Users.getNameUser(senderID);
  
  const warningMessage = {
- body: `» Notice from Owner SA HU «\n\n${userName}, You are stupid for cursing bots so bots automatically banned you from the system`
+ body: `» Notice from Owner SI YAM «\n\n${userName}, You are stupid for cursing bots so bots automatically banned you from the system`
  };
 
  

@@ -2,7 +2,7 @@ module.exports.config = {
 	name: "setemoji",
 	version: "1.0.0",
 	hasPermssion: 0,
-	credits: "𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
+	credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴_ ☢️",
 	description: "Change emoji in group",
 	commandCategory: "Group",
 	usages: "setemoji [emoji]",

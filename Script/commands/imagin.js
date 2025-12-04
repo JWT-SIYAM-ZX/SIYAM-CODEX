@@ -1,160 +1,149 @@
-const axios = require('axios');
-const fs = require('fs-extra');
-const path = require('path');
-const { createCanvas, loadImage } = require('canvas');
+const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
+const { createCanvas, loadImage } = require("canvas");
 
-module.exports.config = {
-    name: "aiart",
-    aliases: ["flux", "img", "photo"],
-    version: "2.0",
-    author: "তোমার নাম / Modified by Grok",
-    countDown: 20,
+const API_ENDPOINT = "https://metakexbyneokex.fly.dev/images/generate";
+
+async function downloadImage(url, folder, filename) {
+  const filePath = path.join(folder, filename);
+  const res = await axios.get(url, { responseType: "arraybuffer", timeout: 60000 });
+  await fs.writeFile(filePath, res.data);
+  return filePath;
+}
+
+async function createGridImage(imagePaths, outputPath) {
+  const images = await Promise.all(imagePaths.map(p => loadImage(p)));
+  const w = images[0].width;
+  const h = images[0].height;
+  const pad = 12;
+
+  const canvas = createCanvas(w*2 + pad*3, h*2 + pad*3);
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const positions = [
+    [pad, pad],
+    [w + pad*2, pad],
+    [pad, h + pad*2],
+    [w + pad*2, h + pad*2]
+  ];
+
+  images.forEach((img, i) => {
+    ctx.drawImage(img, positions[i][0], positions[i][1], w, h);
+
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.beginPath();
+    ctx.arc(positions[i][0] + 30, positions[i][1] + 30, 20, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 22px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(i+1), positions[i][0] + 30, positions[i][1] + 30);
+  });
+
+  await fs.writeFile(outputPath, canvas.toBuffer("image/png"));
+}
+
+module.exports = {
+  config: {
+    name: "meta",
+    version: "FINAL",
+    author: "SIYAM BOT",
     role: 0,
-    longDescription: "Generate 4 images using FLUX.1 (2025 Working). Reply 1-4 to get full image.",
+    countDown: 15,
     category: "ai-image",
-    guide: { en: "{pn} <prompt>\nExample: {pn} a beautiful girl in cyberpunk city" }
-};
-
-const API_URL = "https://api.puter.com/v2/ai/txt2img"; // 2025-এর সবচেয়ে স্টেবল ফ্রি API (আনলিমিটেড)
-
-async function downloadImage(url, filepath) {
-    const writer = fs.createWriteStream(filepath);
-    const response = await axios({
-        url,
-        method: 'GET',
-        responseType: 'stream',
-        timeout: 60000
-    });
-    response.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-    });
-}
-
-async function createGrid(imagePaths, outputPath) {
-    const images = await Promise.all(imagePaths.map(p => loadImage(p)));
-    const size = images[0].width;
-    const canvas = createCanvas(size * 2 + 30, size * 2 + 30);
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#0f0f1a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const positions = [
-        { x: 10, y: 10 },
-        { x: size + 20, y: 10 },
-        { x: 10, y: size + 20 },
-        { x: size + 20, y: size + 20 }
-    ];
-
-    for (let i = 0; i < 4; i++) {
-        const { x, y } = positions[i];
-        ctx.drawImage(images[i], x, y, size, size);
-
-        // নম্বর সার্কেল
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.beginPath();
-        ctx.arc(x + 50, y + 50, 35, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#00ffcc';
-        ctx.font = 'bold 40px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText((i + 1).toString(), x + 50, y + 50);
+    guide: {
+      en: ".meta <describe your image>\nExample: .meta cyberpunk city"
     }
+  },
 
-    await fs.writeFile(outputPath, canvas.toBuffer('image/png'));
-}
+  onStart: async function ({ message, event, args, commandName }) {
 
-module.exports.onStart = async function({ message, args, event }) {
-    const prompt = args.join(" ").trim();
-    if (!prompt) return message.reply("অসাধারণ ছবি বানাতে একটা প্রম্পট দাও 😘\n\nExample: aiart a cute anime girl with blue hair");
-
-    message.reaction("⏳", event.messageID);
+    const prompt = args.join(" ");
+    if (!prompt) {
+      return message.reply("❌ Prompt দাও!\nExample: .meta a tiger with fire eyes");
+    }
 
     const cacheDir = path.join(__dirname, "cache");
-    await fs.ensureDir(cacheDir);
-
-    try {
-        const res = await axios.post(API_URL, {
-            prompt: prompt,
-            model: "black-forest-labs/FLUX.1-schnell",
-            width: 1024,
-            height: 1024,
-            num_outputs: 4
-        });
-
-        const imageUrls = res.data.images.map(img => img.url);
-        if (!imageUrls || imageUrls.length < 4) throw new Error("API থেকে কম ইমেজ এসেছে!");
-
-        const tempPaths = [];
-        for (let i = 0; i < 4; i++) {
-            const imgPath = path.join(cacheDir, `flux_${Date.now()}_${i + 1}.png`);
-            await downloadImage(imageUrls[i], imgPath);
-            tempPaths.push(imgPath);
-        }
-
-        const gridPath = path.join(cacheDir, `grid_${Date.now()}.png`);
-        await createGrid(tempPaths, gridPath);
-
-        message.reply({
-            body: `✨ FLUX.1 দিয়ে ৪টা ছবি তৈরি হয়েছে!\n\nরিপ্লাই করো: ১ / ২ / ৩ / ৪\nতোমার পছন্দের ছবিটা পাঠিয়ে দেবো`,
-            attachment: fs.createReadStream(gridPath)
-        }, (err, info) => {
-            if (!err) {
-                global.GoatBot.onReply.set(info.messageID, {
-                    commandName: "aiart",
-                    messageID: info.messageID,
-                    author: event.senderID,
-                    imageUrls: imageUrls,
-                    tempPaths: tempPaths,
-                    gridPath: gridPath
-                });
-            }
-        });
-
-        message.reaction("✅", event.messageID);
-
-    } catch (e) {
-        message.reaction("❌", event.messageID);
-        message.reply(`❌ Error: ${e.message || "ইমেজ জেনারেট করতে সমস্যা হয়েছে, আবার চেষ্টা করো।"}`);
-        console.error(e);
-    }
-};
-
-module.exports.onReply = async function({ message, event, Reply }) {
-    const { author, imageUrls, tempPaths, gridPath } = Reply;
-    if (event.senderID !== author) return;
-
-    const choice = parseInt(event.body.trim());
-    if (isNaN(choice) || choice < 1 || choice > 4) {
-        return message.reply("শুধু ১, ২, ৩ বা ৪ লিখো 😅");
-    }
+    if (!fs.existsSync(cacheDir)) await fs.mkdirp(cacheDir);
 
     message.reaction("⏳", event.messageID);
 
+    let temp = [];
+    let gridPath = "";
+
     try {
-        const selectedUrl = imageUrls[choice - 1];
-        const savePath = path.join(__dirname, "cache", `selected_${Date.now()}.png`);
-        await downloadImage(selectedUrl, savePath);
+      const res = await axios.post(API_ENDPOINT, { prompt });
 
-        await message.reply({
-            body: "✨ তোমার পছন্দের ছবি এটাই ❤️",
-            attachment: fs.createReadStream(savePath)
-        });
+      if (!res.data.success || !res.data.images) {
+        throw new Error("API failed");
+      }
 
-        message.reaction("✅", event.messageID);
+      const urls = res.data.images.slice(0, 4).map(i => i.url);
 
-        // ক্লিনআপ
-        [savePath, gridPath, ...tempPaths].forEach(p => {
-            if (fs.existsSync(p)) fs.unlinkSync(p);
-        });
-        global.GoatBot.onReply.delete(Reply.messageID);
+      for (let i = 0; i < urls.length; i++) {
+        const p = await downloadImage(urls[i], cacheDir, `meta_${Date.now()}_${i}.png`);
+        temp.push(p);
+      }
+
+      gridPath = path.join(cacheDir, `meta_grid_${Date.now()}.png`);
+      await createGridImage(temp, gridPath);
+
+      message.reply({
+        body: "🖼 4 টি ছবি তৈরি হয়েছে\n👉 Reply করো: 1 / 2 / 3 / 4",
+        attachment: fs.createReadStream(gridPath)
+      }, (err, info) => {
+        if (!err) {
+          global.GoatBot.onReply.set(info.messageID, {
+            commandName,
+            author: event.senderID,
+            imageUrls: urls,
+            tempPaths: temp,
+            gridPath
+          });
+        }
+      });
+
+      message.reaction("✅", event.messageID);
 
     } catch (e) {
-        message.reaction("❌", event.messageID);
-        message.reply("ছবি পাঠাতে সমস্যা হয়েছে 😭");
+      console.error(e);
+      message.reaction("❌", event.messageID);
+      message.reply("❌ Image তৈরি হয়নি (API Error)");
     }
+  },
+
+  onReply: async function ({ message, event, Reply }) {
+
+    if (event.senderID !== Reply.author) return;
+
+    const choice = parseInt(event.body);
+    if (![1, 2, 3, 4].includes(choice)) return;
+
+    const cacheDir = path.join(__dirname, "cache");
+    const file = path.join(cacheDir, `selected_${Date.now()}.png`);
+
+    try {
+      await downloadImage(Reply.imageUrls[choice - 1], cacheDir, path.basename(file));
+
+      message.reply({
+        body: "✅ এইটা তোমার ছবি",
+        attachment: fs.createReadStream(file)
+      });
+
+    } catch {
+      message.reply("❌ ছবি আনা যায়নি");
+    }
+
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+    Reply.tempPaths.forEach(p => fs.existsSync(p) && fs.unlinkSync(p));
+    if (fs.existsSync(Reply.gridPath)) fs.unlinkSync(Reply.gridPath);
+
+    global.GoatBot.onReply.delete(Reply.messageID);
+  }
 };

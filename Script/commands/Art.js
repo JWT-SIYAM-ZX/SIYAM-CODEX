@@ -4,14 +4,13 @@ const path = require('path');
 const { createCanvas, loadImage } = require('canvas');
 
 const API_ENDPOINT = "https://dev.oculux.xyz/api/artv1";
-const cache = new Map();
 
 module.exports = {
   config: {
     name: "art",
     aliases: ["artv1","draw"],
     version: "2.0",
-    author: "ONLY SIYAM",
+    author: "NeoKEX",
     countDown: 15,
     role: 0,
     description: "Generate AI images (grid + reply select)",
@@ -19,120 +18,132 @@ module.exports = {
     usages: ".art <prompt>"
   },
 
-  run: async ({ api, event, args }) => {
+  onStart: async function({ message, args, event, api }) {
     const prompt = args.join(" ");
-    if (!prompt) return api.sendMessage("❌ Please provide a prompt.\nExample: .art a cat in space", event.threadID);
+    if (!prompt) return message.reply("❌ Please provide a prompt.\nExample: .art a cat in space");
 
-    generateImages(api, event, prompt);
-  },
+    const cacheDir = path.join(__dirname, "cache");
+    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-  handleEvent: async ({ api, event }) => {
-    const pick = event.body?.trim();
-    if (!["1","2","3","4"].includes(pick)) return;
+    let tempPaths = [];
+    let urls = [];
 
-    if (!cache.has(event.senderID)) return;
-
-    const data = cache.get(event.senderID);
-    const imgURL = data.urls[pick - 1];
-
-    if (!imgURL) return api.sendMessage("❌ Image not found", event.threadID);
-
-    const file = path.join(__dirname,"cache",`art_pick_${event.senderID}.png`);
+    const wait = await api.sendMessage("⏳ Generating 4 images...", event.threadID);
 
     try {
-      const buffer = (await axios.get(imgURL, { responseType: "arraybuffer" })).data;
-      fs.writeFileSync(file, buffer);
+      // Generate 4 images
+      for (let i = 0; i < 4; i++) {
+        const res = await axios.get(`${API_ENDPOINT}?p=${encodeURIComponent(prompt.trim())}`, { responseType: "arraybuffer", timeout: 60000 });
+        const filePath = path.join(cacheDir, `artv1_${Date.now()}_${i}.png`);
+        fs.writeFileSync(filePath, res.data);
+        tempPaths.push(filePath);
+        urls.push(`file://${filePath}`);
+      }
 
-      api.sendMessage({
-        body: "✅ Selected Image:",
-        attachment: fs.createReadStream(file)
-      }, event.threadID, () => fs.unlinkSync(file));
+      // Create 2x2 grid
+      const gridPath = path.join(cacheDir, `grid_${Date.now()}.png`);
+      await createGrid(tempPaths, gridPath);
 
-      cache.delete(event.senderID);
+      // Send grid and track reply
+      await api.sendMessage({
+        body: "🖼 Reply with 1-4 to select your preferred image",
+        attachment: fs.createReadStream(gridPath)
+      }, event.threadID, (err, info) => {
+        if (!err) {
+          global.GoatBot.onReply.set(info.messageID, {
+            author: event.senderID,
+            urls: urls,
+            tempPaths: tempPaths,
+            gridPath: gridPath,
+            commandName: "art"
+          });
+        } else {
+          // Cleanup if send failed
+          tempPaths.forEach(p => fs.existsSync(p) ? fs.unlinkSync(p) : null);
+          if (fs.existsSync(gridPath)) fs.unlinkSync(gridPath);
+        }
+      });
 
-    } catch(e){
+      await api.unsendMessage(wait.messageID);
+
+    } catch (err) {
+      tempPaths.forEach(p => fs.existsSync(p) ? fs.unlinkSync(p) : null);
+      message.reply("❌ ArtV1 generation failed.");
+      console.error(err);
+    }
+  },
+
+  onReply: async function({ event, api, Reply }) {
+    const { urls, tempPaths, gridPath, author } = Reply;
+    if (event.senderID !== author) return; // Only allow original user
+
+    const selection = parseInt(event.body.trim());
+    if (![1,2,3,4].includes(selection)) return;
+
+    const selectedURL = urls[selection - 1];
+    if (!selectedURL) return api.sendMessage("❌ Image not found", event.threadID);
+
+    const filePath = path.join(__dirname, "cache", `art_selected_${Date.now()}.png`);
+    try {
+      const buffer = (await axios.get(selectedURL, { responseType: "arraybuffer" })).data;
+      fs.writeFileSync(filePath, buffer);
+
+      await api.sendMessage({
+        body: "✅ Here is your selected image:",
+        attachment: fs.createReadStream(filePath)
+      }, event.threadID, () => fs.unlinkSync(filePath));
+
+    } catch (err) {
+      console.error(err);
       api.sendMessage("❌ Failed to send selected image", event.threadID);
+    } finally {
+      // Cleanup
+      tempPaths.forEach(p => fs.existsSync(p) ? fs.unlinkSync(p) : null);
+      if (gridPath && fs.existsSync(gridPath)) fs.unlinkSync(gridPath);
+      global.GoatBot.onReply.delete(Reply.messageID);
     }
   }
 };
 
-// ===== IMAGE GENERATION & GRID =====
-async function generateImages(api, event, prompt){
-  let wait;
-  const dir = path.join(__dirname,"cache");
-  if(!fs.existsSync(dir)) fs.mkdirSync(dir);
+// ===== GRID CREATION =====
+async function createGrid(imagePaths, outputPath) {
+  const images = await Promise.all(imagePaths.map(p => loadImage(p)));
 
-  try {
-    wait = await api.sendMessage("⏳ Generating 4 images...", event.threadID);
+  const imgWidth = images[0].width;
+  const imgHeight = images[0].height;
+  const padding = 10;
+  const canvasWidth = imgWidth * 2 + padding * 3;
+  const canvasHeight = imgHeight * 2 + padding * 3;
 
-    const urls = [];
-    for(let i=0;i<4;i++){
-      const fullApiUrl = `${API_ENDPOINT}?p=${encodeURIComponent(prompt.trim())}`;
-      const res = await axios.get(fullApiUrl, { responseType:"arraybuffer", timeout:60000 });
-      const fileName = path.join(dir, `artv1_${Date.now()}_${i}.png`);
-      fs.writeFileSync(fileName, res.data);
-      urls.push(`file://${fileName}`);
-    }
-
-    const gridPath = path.join(dir, `grid_${Date.now()}.png`);
-    await makeGrid(urls, gridPath);
-
-    api.sendMessage({
-      body: "🖼 Reply with 1-4 to select your preferred image",
-      attachment: fs.createReadStream(gridPath)
-    }, event.threadID, () => {
-      urls.forEach(f=>{
-        const p = f.replace("file://","");
-        if(fs.existsSync(p)) fs.unlinkSync(p);
-      });
-      if(fs.existsSync(gridPath)) fs.unlinkSync(gridPath);
-    });
-
-    cache.set(event.senderID, { urls });
-
-    api.unsendMessage(wait.messageID);
-
-  } catch(e){
-    console.error(e);
-    api.sendMessage("❌ ArtV1 generation failed", event.threadID);
-  }
-}
-
-// ===== GRID MAKER =====
-async function makeGrid(images, output){
-  const imgs = await Promise.all(images.map(p=>loadImage(p.replace("file://",""))));
-
-  const w = imgs[0].width;
-  const h = imgs[0].height;
-  const pad = 10;
-
-  const canvas = createCanvas(w*2 + pad*3, h*2 + pad*3);
+  const canvas = createCanvas(canvasWidth, canvasHeight);
   const ctx = canvas.getContext("2d");
 
   ctx.fillStyle = "#111";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(0,0,canvasWidth,canvasHeight);
 
-  const pos = [
-    [pad, pad],
-    [pad*2 + w, pad],
-    [pad, pad*2 + h],
-    [pad*2 + w, pad*2 + h]
+  const positions = [
+    { x: padding, y: padding },
+    { x: imgWidth + padding*2, y: padding },
+    { x: padding, y: imgHeight + padding*2 },
+    { x: imgWidth + padding*2, y: imgHeight + padding*2 }
   ];
 
-  imgs.forEach((img,i)=>{
-    ctx.drawImage(img, pos[i][0], pos[i][1], w, h);
+  images.forEach((img, i) => {
+    const pos = positions[i];
+    ctx.drawImage(img, pos.x, pos.y, imgWidth, imgHeight);
 
-    ctx.fillStyle="rgba(0,0,0,0.6)";
+    // Add number bubble
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.beginPath();
-    ctx.arc(pos[i][0]+35,pos[i][1]+35,25,0,Math.PI*2);
+    ctx.arc(pos.x + 35, pos.y + 35, 25, 0, Math.PI*2);
     ctx.fill();
 
-    ctx.fillStyle="#fff";
-    ctx.font="bold 26px Arial";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillText(i+1,pos[i][0]+35,pos[i][1]+35);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 26px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(i+1, pos.x + 35, pos.y + 35);
   });
 
-  fs.writeFileSync(output, canvas.toBuffer());
+  fs.writeFileSync(outputPath, canvas.toBuffer());
 }

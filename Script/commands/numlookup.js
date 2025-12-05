@@ -54,15 +54,15 @@ module.exports.run = async function({ api, event, args }) {
 
     // Final styled output
     const resultText = 
-`🔍 LIVE NUMBER LOOKUP
+`🔍 𝕃𝕀𝕍𝔼 ℕ𝕌𝕄𝔹𝔼ℝ 𝕃𝕆𝕆𝕂𝕌ℙ
 
-👤 Name      : ${name}
-📞 Number    : ${number}
-📘 Facebook  : ${fb === null ? "Not Found" : fb}
-🖼 Photo     : ${photoStatus}
+👤 𝙽𝙰𝙼𝙴      : ${name}
+📞 𝙽𝚄𝙼𝙱𝙴𝚁    : ${number}
+📘 𝙵𝚊𝚌𝚎𝚋𝚘𝚘𝚔  : ${fb === null ? "Not Found" : fb}
+🖼 𝙿𝙷𝙾𝚃𝙾     : ${photoStatus}
 
 ━━━━━━━━━━━━
-🔰 SIYAM Lookup Engine`;
+🤖 𝐒𝐈𝐘𝐀𝐌 𝐋𝐎𝐎𝐊𝐔𝐏 𝐁𝐎𝐓`;
 
     // Send with image if exists
     if (img) {

@@ -1,19 +1,15 @@
 /**
  * numlookup.js
  * Usage:
- *   !numlookup 8801789963078
- *   /numlookup 01838000000
- *
- * API:
- * https://connect-foxapi.onrender.com/tools/numlookup?apikey=gaysex&number=
+ * !numlookup 8801789963078
  */
 
 module.exports.config = {
   name: "numlookup",
-  version: "2.0",
+  version: "3.0",
   hasPermssion: 0,
   credits: "SIYAM",
-  description: "Phone number lookup with image + card style",
+  description: "Live number lookup styled output",
   commandCategory: "utility",
   usages: "!numlookup <number>",
   cooldowns: 3
@@ -22,69 +18,66 @@ module.exports.config = {
 const axios = require("axios");
 
 const BASE_API = "https://connect-foxapi.onrender.com/tools/numlookup";
-const API_KEY = "gaysex"; // YOUR API KEY HERE
+const API_KEY = "gaysex";
 
 module.exports.run = async function({ api, event, args }) {
   try {
+
     const threadID = event.threadID;
     const input = args.join("").trim();
 
     if (!input) {
-      return api.sendMessage(
-        "❗ Use: !numlookup <phone number>\nExample: !numlookup 8801789963078",
-        threadID
-      );
+      return api.sendMessage("❌ Usage: !numlookup <number>\nExample: !numlookup 8801789963078", threadID);
     }
 
-    // sanitize number
+    // Clean number
     const number = input.replace(/\s+/g, "").replace(/^\+/, "");
 
+    await api.sendMessage(`🔍 LIVE NUMBER LOOKUP...\n\n📞 Looking: ${number}`, threadID);
+
     const url = `${BASE_API}?apikey=${API_KEY}&number=${number}`;
-
-    await api.sendMessage(`🔎 Looking up: ${number} ...`, threadID);
-
     const res = await axios.get(url, { timeout: 15000 });
     const data = res.data;
 
-    if (!data || data.error || data.status === "error") {
-      return api.sendMessage(
-        `❌ Lookup failed.\n${data.message || "No response from API"}`,
-        threadID
-      );
+    if (!data || data.status === "error" || data.error) {
+      return api.sendMessage("❌ Lookup failed! API did not respond.", threadID);
     }
 
-    // Unwrap API response safely
-    let payload = data.data || data.result || data;
+    // Extract data
+    const payload = data.data || data.result || data;
 
     const name = payload.name || "Not Found";
     const img = payload.img || null;
     const fb = payload.fb_id || "Not Found";
 
-    // UI Output
-    const text = 
-`📱 Number Lookup Results
+    const photoStatus = img ? "Loaded ✅" : "Not Found ❌";
 
-━━━━━━━━━━━━━━━━━━
-☑ Number      : ${number}
-☑ Name        : ${name}
-☑ Facebook ID : ${fb === null ? "Not Found" : fb}
-━━━━━━━━━━━━━━━━━━
-🤖 SIYAM Lookup Bot`;
+    // Final styled output
+    const resultText = 
+`🔍 LIVE NUMBER LOOKUP
+
+👤 Name      : ${name}
+📞 Number    : ${number}
+📘 Facebook  : ${fb === null ? "Not Found" : fb}
+🖼 Photo     : ${photoStatus}
+
+━━━━━━━━━━━━
+🔰 SIYAM Lookup Engine`;
 
     // Send with image if exists
     if (img) {
       const stream = await axios.get(img, { responseType: "stream" });
       return api.sendMessage({
-        body: text,
+        body: resultText,
         attachment: stream.data
       }, threadID);
     }
 
-    // else text only
-    return api.sendMessage(text, threadID);
+    // No image -> only text
+    return api.sendMessage(resultText, threadID);
 
-  } catch (err) {
-    console.log("numlookup error:", err.message || err);
-    return api.sendMessage("❌ Error occurred during lookup. Try again later.", event.threadID);
+  } catch (e) {
+    console.error("numlookup error:", e.message || e);
+    return api.sendMessage("❌ Server error! Try again later.", event.threadID);
   }
 };

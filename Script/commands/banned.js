@@ -2,7 +2,7 @@ module.exports.config = {
     name: "check",
     version: "1.0.0",
     hasPermssion: 0,
-    credits: "ONLY SIYAM BOT TEAM ☢️ (Modified by ChatGPT)",
+    credits: "ONLY SIYAM BOT TEAM ☢️",
     description: "Check Free Fire player info + ban status with video response",
     commandCategory: "game",
     usages: "[UID]",

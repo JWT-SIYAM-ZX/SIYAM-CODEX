@@ -1,13 +1,13 @@
-### —͟͟͞͞𝐒𝐇𝐀𝐇𝐀𝐃𝐀𝐓 𝐂𝐇𝐀𝐓 𝐁𝐎𝐓  𝐅𝐎𝐑𝐊  🌺
+### —͟͟͞͞𝐒𝐈𝐘𝐀𝐌 𝐂𝐇𝐀𝐓 𝐁𝐎𝐓  𝐅𝐎𝐑𝐊  🌺
 
 ❖ **`A Messenger Multi Device Bot To Take Your Messenger To Another Level!`** 
 
 
 
 Assalamualaikum Everyone!  
-**Welcome to My SHAHADAT CHAT BOT Fork!**
+**Welcome to My SIYAM CHAT BOT Fork!**
 
-![Box-shaped Image](https://i.imgur.com/u7VnPzH.png)
+![Box-shaped Image](https://imgur.com/KIw8yWI.png)
 
 <p align="center" style="animation: glow 2s infinite alternate; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
   <span style="font-size: 24px; font-weight: bold;">SHAHADAT CHAT BOT</span><br>
@@ -67,7 +67,7 @@ ___
 
 ## HOW TO RUN THIS CHAT BOT 🚀
 
-[![Watch the Video](https://i.imgur.com/EKtftdm.png)](https://youtu.be/blg0O7IgcrA?si=vpz42AK06uIblLN9)
+[![Watch the Video](https://imgur.com/KIw8yWI.png)](https://youtu.be/blg0O7IgcrA?si=vpz42AK06uIblLN9)
 
 Click the image above to watch the step-by-step tutorial on YouTube.
 
@@ -158,15 +158,15 @@ ___
 
 ## 👨‍💻 **ABOUT THE DEVELOPER**  
   
-**Name:** **`SHAHADAT ISLAM`**  
-**Nice Name:** **`SA HU`**  
+**Name:** **`SIYAM ISLAM`**  
+**Nice Name:** **`SIYAM`**  
 **Profession:** **`STUDENT & CHATBOT DEVELOPER`**  
-**Location:** **`KHAGRACHARI, BANGLADESH`**  
+**Location:** **`SERAJGONG, BANGLADESH`**  
 
 ### 📞 **CONTACT INFORMATION**  
-- **WhatsApp:** **[01882 333052](https://wa.me/+8801882333052)**  
-- **Facebook:** **[Facebook ID](https://facebook.com/100001039692046)**  
-- **Messenger:** **[Message Me](https://m.me/100001039692046)**  
+- **WhatsApp:** **[01882 333052](https://wa.me/+8801789963078)**  
+- **Facebook:** **[Facebook ID](https://facebook.com/100063442824450)**  
+- **Messenger:** **[Message Me](https://m.me/1100063442824450)**  
 
 ### 🚀 **DEVELOPMENT APPROACH**  
 - 💻 **Copy-paste techniques with customizations**  
@@ -187,10 +187,10 @@ If you need any help, you can contact the admin.
 Please do not disturb the admin unless you have a special need. Thank you! 
 
 <p align="center">
-  <a href="https://wa.me/+8801882333052?text=Assalamualaikum%20Admin%20SHAHADAT%20SAHU%20Need%20Help%20Please%20Brother%20🫶">
+  <a href="https://wa.me/+880178963078?text=Assalamualaikum%20Admin%20SHAHADAT%20SAHU%20Need%20Help%20Please%20Brother%20🫶">
     <img alt="WhatsApp" src="https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white">
   </a>
-  <a href="https://m.me/100001039692046">
+  <a href="https://m.me/100063442824450">
     <img alt="Messenger" src="https://img.shields.io/badge/Messenger-00B2FF?style=for-the-badge&logo=messenger&logoColor=white">
   </a>
 </p>
@@ -199,10 +199,10 @@ Please do not disturb the admin unless you have a special need. Thank you!
 
 ## ✨🌟 Special Thanks 🌟✨
 
-- 🚀 **Cyber Bot Team**  
-- 🧙‍♂️ **Ullash (Owner Cyber Bot Team)**
-- 🛡️ **Sujon (Admin Cyber Bot Team)**
-- 🎓 **Grandpa EJ (Owner Grandpa Academy)** 
+- 🚀 **SIYAM Bot Team**  
+- 🧙‍♂️ **SIYAM (Owner Cyber Bot Team)**
+- 🛡️ **SIYAM (Admin Cyber Bot Team)**
+- 🎓 **SIYAMXP (SIYAMXP)** 
 
 ---
 

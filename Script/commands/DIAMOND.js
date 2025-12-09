@@ -110,12 +110,14 @@ or type "cancel"`;
     const receipt =
 `🎫 DIAMOND RECEIPT
 
+
 👤 Player : ${playerName}
 🆔 UID     : ${uid}
 💎 Amount  : ${amount}
 🕒 Time    : ${now}
 ✅ Status  : SUCCESS
 
+CREADIT: ONLY SIYAM.`;
 
     // Save log
     try {
@@ -139,4 +141,4 @@ or type "cancel"`;
 
 function delay(ms) {
   return new Promise(res => setTimeout(res, ms));
-        }
+}

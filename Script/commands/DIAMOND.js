@@ -116,8 +116,6 @@ or type "cancel"`;
 🕒 Time    : ${now}
 ✅ Status  : SUCCESS
 
-This is NOT a real topup.`;
-
     // Save log
     try {
       const cacheDir = path.resolve(__dirname, "cache");

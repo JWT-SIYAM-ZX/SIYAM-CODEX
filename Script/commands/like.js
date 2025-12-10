@@ -1,7 +1,7 @@
 /**
  * like.js
- * REAL LIKE + RANDOM ADD (ADMIN ONLY)
- * ONE UID = 24 HOURS LOCK
+ * REAL LIKES + RANDOM BOOST
+ * ADMIN ONLY
  * CREATOR: ONLY SIYAM
  */
 
@@ -9,23 +9,20 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-// ===== DATABASE FILE =====
+// ===== STORAGE FILE =====
 const DB_PATH = path.join(__dirname, "likeCooldown.json");
 
-// ===== ENSURE FILE EXISTS =====
-if (!fs.existsSync(DB_PATH)) {
-  fs.writeFileSync(DB_PATH, "{}");
-}
-
-// ===== LOAD DATA =====
+// ===== LOAD DB =====
 let cooldownData = {};
-try {
-  cooldownData = JSON.parse(fs.readFileSync(DB_PATH));
-} catch {
-  cooldownData = {};
+if (fs.existsSync(DB_PATH)) {
+  try {
+    cooldownData = JSON.parse(fs.readFileSync(DB_PATH));
+  } catch {
+    cooldownData = {};
+  }
 }
 
-// ===== SAVE DATA FUNCTION =====
+// ===== SAVE DB =====
 function saveDB() {
   fs.writeFileSync(DB_PATH, JSON.stringify(cooldownData, null, 2));
 }
@@ -35,19 +32,19 @@ function random(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// ===== FALLBACK NAME =====
+// ===== RANDOM NAME FALLBACK =====
 function randomName() {
-  const names = ["Hossain", "Siam", "Hasan", "Ratul", "Rakib", "Arif", "Nayeem"];
-  const tags = ["✓", "乂", "ツ", "亗", "✘"];
+  const names = ["Hossain", "Siam", "Hasan", "Ratul", "Arif", "Rakib", "Nayeem"];
+  const tags = ["꧁", "๛", "✓", "乂", "ツ"];
   return `${tags[random(0,tags.length-1)]}${names[random(0,names.length-1)]}${tags[random(0,tags.length-1)]}`;
 }
 
 module.exports.config = {
   name: "like",
-  version: "FINAL-LOCKED",
+  version: "FINAL",
   hasPermssion: 1,
   credits: "ONLY SIYAM",
-  description: "Admin only FF like sender (24h per UID)",
+  description: "Admin Only Free Fire Like Bot",
   commandCategory: "admin",
   usages: "/like [region] [uid]",
   cooldowns: 3
@@ -57,50 +54,41 @@ module.exports.run = async function({ api, event, args }) {
 
   const { threadID, messageID, senderID } = event;
 
-  // ===== ADMIN CHECK =====
+  // ===== ADMIN ONLY =====
   if (!global.config.ADMINBOT || !global.config.ADMINBOT.includes(senderID)) {
-    return api.sendMessage("⛔ গরিবদের জন্য নয়!", threadID, messageID);
+    return api.sendMessage("⛔ Aগরিবদের জন্য নয়!", threadID, messageID);
   }
 
-  // ===== ARGUMENT SETUP =====
+  // ===== ARGS =====
   let region = "BD";
   let UID;
 
-  if (args.length === 1) {
-    UID = args[0];
-  } else if (args.length >= 2) {
+  if(args.length === 1) UID = args[0];
+  else if(args.length >= 2){
     region = args[0].toUpperCase();
     UID = args[1];
   } else {
-    return api.sendMessage("❌ Usage: /like [region] [uid]\nExample: /like bd 903437692", threadID, messageID);
+    return api.sendMessage("❌ Usage:\n/like [region] [uid]\nExample: /like bd 903437692", threadID, messageID);
   }
 
-  // ===== UID VALIDATE =====
   if (!/^\d{5,20}$/.test(UID)) {
     return api.sendMessage("❌ Invalid UID format!", threadID, messageID);
   }
 
-  // ===== 24 HOURS CHECK =====
+  // ===== 24H COOLDOWN =====
   const now = Date.now();
-  const lastUsed = cooldownData[UID];
-
-  if (lastUsed) {
-    const diff = now - lastUsed;
-    const left = Math.ceil((86400000 - diff) / (1000 * 60 * 60));
-
+  if (cooldownData[UID]) {
+    const diff = now - cooldownData[UID];
+    const hoursLeft = 24 - Math.floor(diff / (1000 * 60 * 60));
     if (diff < 86400000) {
-      return api.sendMessage(
-        `⚠️ This Player Already Got Maximum Likes For Today.\nPlease try again after ${left} hour(s).`,
-        threadID,
-        messageID
-      );
+      return api.sendMessage(`⚠️This Player Already Got Maximum Likes For Today.\nTry again after ${hoursLeft} hour(s).`, threadID, messageID);
     }
   }
 
   // ===== PROCESSING =====
   await api.sendMessage("⏳ Processing like request...", threadID);
 
-  // ===== LIKE SYSTEM =====
+  // ===== LIKE LOGIC =====
   const likesGiven = random(1, 290);
   let likesBefore = 0;
   let playerName = randomName();
@@ -108,26 +96,21 @@ module.exports.run = async function({ api, event, args }) {
   try {
     const apiUrl = `https://danger-info-alpha.vercel.app/accinfo?uid=${UID}&key=DANGERxINFO`;
     const res = await axios.get(apiUrl);
-
-    if (res.data && res.data.basicInfo) {
-      if (res.data.basicInfo.nickname) {
-        playerName = res.data.basicInfo.nickname;
-      }
-      if (res.data.basicInfo.liked) {
-        likesBefore = parseInt(res.data.basicInfo.liked) || 0;
-      }
+    if(res.data && res.data.basicInfo){
+      playerName = res.data.basicInfo.nickname || playerName;
+      likesBefore = parseInt(res.data.basicInfo.liked || 0);
     }
-  } catch {
-    likesBefore = random(1000likes0);
+  } catch(e){
+    likesBefore = random(1000,8000);
   }
 
   const totalLikes = likesBefore + likesGiven;
 
-  // ===== SAVE TIME (LOCK UID) =====
+  // ===== SAVE COOLDOWN =====
   cooldownData[UID] = now;
   saveDB();
 
-  // ===== FINAL MESSAGE =====
+  // ===== FINAL RESPONSE =====
   const msg = `✅ Likes Sent Successfully! 🎉
 
 👤 Player Name: ${playerName}

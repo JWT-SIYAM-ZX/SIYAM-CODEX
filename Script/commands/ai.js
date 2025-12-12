@@ -1,59 +1,105 @@
 const axios = require("axios");
-const fs = require("fs");
+const API_ENDPOINT = "https://metakexbyneokex.fly.dev/chat";
 
-module.exports = {
-  config: {
-    name: "ai",
-    version: "1.0.0",
-    hasPermssion: 0,
-    credits: "SHAHADAT SAHU",
-    description: "AI Chat Bot - Reply with any message",
-    commandCategory: "AI Tools",
-    usages: "Reply to any message or type /ai your message",
-    cooldowns: 3
-  },
+module.exports.config = {
+  name: "ai",
+  version: "2.1",
+  hasPermssion: 0,
+  credits: "ONLY SIYAM BOT TEAM ☢️",
+  description: "Chat with Meta AI in structured format",
+  commandCategory: "AI",
+  usages: "[your question]",
+  cooldowns: 3
+};
 
-  handleEvent: async ({ api, event }) => {
-    const { body, messageReply, threadID, messageID } = event;
-    
-    // Jodi user /ai na bole reply kore
-    if (!body) return;
-    
-    const msgText = body || (messageReply && messageReply.body);
-    if (!msgText) return;
+// Escape markdown for safe display
+function escape_md(text) {
+  if (!text) return "None";
+  return text.toString().replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
+}
 
-    await processAI(api, threadID, messageID, msgText);
-  },
+// Command run
+module.exports.run = async ({ api, event, args }) => {
+  const userMsg = args.join(" ").trim();
+  const { threadID, messageID, senderID } = event;
 
-  run: async ({ api, event, args }) => {
-    const { threadID, messageID } = event;
-    const msgText = args.join(" ");
-    if (!msgText) return api.sendMessage("💬 Type a message to ask AI!", threadID, messageID);
+  if (!userMsg)
+    return api.sendMessage(
+      "❌ Please type a message.\nExample: /ai Who are you?",
+      threadID,
+      messageID
+    );
 
-    await processAI(api, threadID, messageID, msgText);
+  // Initial thinking message
+  const waitMsg = await api.sendMessage(
+    `🤖 AI Thinking...\n\n💬 Question: ${escape_md(userMsg)}`,
+    threadID,
+    messageID
+  );
+
+  try {
+    const res = await axios.post(
+      API_ENDPOINT,
+      { message: userMsg, new_conversation: true, cookies: {} },
+      { headers: { "Content-Type": "application/json" }, timeout: 20000 }
+    );
+
+    const aiReply = res.data.message || "AI replied empty message.";
+
+    // Send AI response
+    const sentMsg = await api.sendMessage(aiReply, threadID, messageID);
+
+    // Setup onReply session for conversation
+    if (!global.GoatBot.onReply) global.GoatBot.onReply = new Map();
+    global.GoatBot.onReply.set(sentMsg.messageID, {
+      commandName: module.exports.config.name,
+      author: senderID,
+      session: true
+    });
+
+    // Delete the "Thinking..." message
+    api.unsendMessage(waitMsg.messageID);
+
+  } catch (err) {
+    api.sendMessage(
+      `❌ AI ERROR\n➤ ${err?.response?.status ? "Server Error " + err.response.status : err.message}`,
+      threadID,
+      messageID
+    );
   }
 };
 
-async function processAI(api, threadID, messageID, msgText) {
-  try {
-    // Wait message
-    const wait = await api.sendMessage("🤖 Thinking...", threadID);
+// Handle replies
+module.exports.onReply = async ({ api, event, Reply }) => {
+  const { senderID, threadID, messageID, body } = event;
 
-    // API call
-    const res = await axios.post("https://metakexbyneokex.fly.dev/chat", {
-      message: msgText
+  if (!Reply || senderID !== Reply.author) return;
+
+  const ask = body.trim();
+  global.GoatBot.onReply.delete(messageID);
+
+  try {
+    const res = await axios.post(
+      API_ENDPOINT,
+      { message: ask, new_conversation: false, cookies: {} },
+      { headers: { "Content-Type": "application/json" }, timeout: 20000 }
+    );
+
+    const answer = res.data.message || "AI replied empty message.";
+
+    const sentMsg = await api.sendMessage(answer, threadID, messageID);
+
+    // Keep session for continuous conversation
+    global.GoatBot.onReply.set(sentMsg.messageID, {
+      commandName: "ai",
+      author: senderID
     });
 
-    const reply = res.data?.response || "❌ AI did not return anything!";
-
-    // Send reply
-    await api.sendMessage(reply, threadID, messageID);
-
-    // Remove wait message
-    api.unsendMessage(wait.messageID);
-
   } catch (err) {
-    console.error(err);
-    api.sendMessage("❌ API Error! Try again later.", threadID, messageID);
+    api.sendMessage(
+      `❌ AI ERROR\n➤ ${err?.response?.status ? "Server Error " + err.response.status : err.message}`,
+      threadID,
+      messageID
+    );
   }
-}
+};

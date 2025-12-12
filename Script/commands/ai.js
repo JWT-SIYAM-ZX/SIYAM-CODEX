@@ -1,36 +1,34 @@
 const axios = require("axios");
-const API_ENDPOINT = "https://metakexbyneokex.fly.dev/chat";
+const API_ENDPOINT = "https://metakexbyneokex.fly.dev/chat");
 
 module.exports.config = {
     name: "ai",
-    version: "2.1",
+    version: "2.2",
     hasPermssion: 0,
     credits: "ONLY SIYAM BOT TEAM ☢️",
-    description: "Chat with Meta AI in structured format",
+    description: "Multi-turn AI chat with proper reply",
     commandCategory: "AI",
     usages: "[your question]",
     cooldowns: 3
 };
 
-// Escape markdown to avoid formatting issues
+// Markdown escape
 function escape_md(text) {
     if (!text) return "None";
     return text.toString().replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
 }
+
+// এই map এ আমরা threadID+userID অনুযায়ী session রাখব
+if (!global.GoatBot.aiSessions) global.GoatBot.aiSessions = new Map();
 
 module.exports.run = async ({ api, event, args }) => {
     const userMsg = args.join(" ").trim();
     const { threadID, messageID, senderID } = event;
 
     if (!userMsg)
-        return api.sendMessage(
-            "❌ Please type a message.\nExample: /ai Who are you?",
-            threadID,
-            messageID
-        );
+        return api.sendMessage("❌ মেসেজ টাইপ করো।\nউদাহরণ: /ai তুমি কে?", threadID, messageID);
 
-    // Inform user that AI is thinking
-    api.sendMessage(`🤖 AI Thinking...\n\n💬 Question: ${escape_md(userMsg)}`, threadID, messageID);
+    api.sendMessage(`🤖 AI ভাবছে...\n\n💬 প্রশ্ন: ${escape_md(userMsg)}`, threadID, messageID);
 
     try {
         const res = await axios.post(
@@ -39,20 +37,21 @@ module.exports.run = async ({ api, event, args }) => {
             { headers: { "Content-Type": "application/json" }, timeout: 20000 }
         );
 
-        const aiReply = res.data.message || "AI replied empty message.";
+        const aiReply = res.data.message || "AI কোনো উত্তর দেয়নি।";
 
-        // Send AI reply and store messageID for ongoing session
         api.sendMessage(aiReply, threadID, (err, info) => {
             if (!err) {
+                // threadID+userID দিয়ে session store করলাম
+                global.GoatBot.aiSessions.set(`${threadID}_${senderID}`, true);
+
+                // reply handle করার জন্য messageID store
                 if (!global.GoatBot.onReply) global.GoatBot.onReply = new Map();
                 global.GoatBot.onReply.set(info.messageID, {
-                    commandName: module.exports.config.name,
-                    author: senderID,
-                    session: true
+                    commandName: "ai",
+                    author: senderID
                 });
             }
         });
-
     } catch (e) {
         api.sendMessage(
             `❌ AI ERROR\n➤ ${e?.response?.status ? "Server Error " + e.response.status : e.message}`,
@@ -62,11 +61,11 @@ module.exports.run = async ({ api, event, args }) => {
     }
 };
 
-// Handle replies to AI messages
+// reply handle
 module.exports.onReply = async ({ api, event, Reply }) => {
     const { senderID, threadID, messageID, body } = event;
 
-    // Only continue conversation if sender is the original user
+    // শুধুমাত্র যিনি মূল মেসেজ পাঠিয়েছেন তার reply handle হবে
     if (!Reply || senderID !== Reply.author) return;
 
     const userMsg = body.trim();
@@ -79,20 +78,21 @@ module.exports.onReply = async ({ api, event, Reply }) => {
             { headers: { "Content-Type": "application/json" }, timeout: 20000 }
         );
 
-        const aiReply = res.data.message || "AI replied empty message.";
+        const aiReply = res.data.message || "AI কোনো উত্তর দেয়নি।";
 
         api.sendMessage(aiReply, threadID, (err, info) => {
             if (!err) {
+                // session সবসময় active রাখব
+                global.GoatBot.aiSessions.set(`${threadID}_${senderID}`, true);
+
+                // নতুন messageID store
                 if (!global.GoatBot.onReply) global.GoatBot.onReply = new Map();
-                // Keep session alive for multi-turn replies
                 global.GoatBot.onReply.set(info.messageID, {
                     commandName: "ai",
-                    author: senderID,
-                    session: true
+                    author: senderID
                 });
             }
         });
-
     } catch (e) {
         api.sendMessage(
             `❌ AI ERROR\n➤ ${e?.response?.status ? "Server Error " + e.response.status : e.message}`,

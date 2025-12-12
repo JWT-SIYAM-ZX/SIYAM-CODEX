@@ -3,12 +3,12 @@ const API_ENDPOINT = "https://metakexbyneokex.fly.dev/chat";
 
 module.exports.config = {
     name: "ai",
-    version: "3.0",
+    version: "4.0",
     hasPermssion: 0,
     credits: "ONLY SIYAM BOT TEAM ☢️",
-    description: "Chat with Meta AI in Messenger-style session",
+    description: "Chat with Meta AI, reply chain supported",
     commandCategory: "AI",
-    usages: "[your question]",
+    usages: "[message]",
     cooldowns: 3
 };
 
@@ -20,13 +20,13 @@ function escape_md(text) {
 
 // Main command
 module.exports.run = async ({ api, event, args }) => {
-    const userMsg = args.join(" ").trim();
     const { threadID, messageID, senderID } = event;
+    const userMsg = args.join(" ").trim();
 
     if (!userMsg)
         return api.sendMessage("❌ Please type a message.\nExample: /ai hi", threadID, messageID);
 
-    // Send "thinking" message first
+    // Thinking message
     api.sendMessage(`🤖 AI Thinking...\n💬 Question: ${escape_md(userMsg)}`, threadID, messageID, async (err, info) => {
         if (err) return;
 
@@ -34,12 +34,14 @@ module.exports.run = async ({ api, event, args }) => {
             const res = await axios.post(API_ENDPOINT, { message: userMsg, new_conversation: true, cookies: {} }, { headers: { "Content-Type": "application/json" }, timeout: 20000 });
             const aiReply = res.data.message || "AI replied empty message.";
 
+            // Send actual AI reply
             api.sendMessage(aiReply, threadID, (err2, info2) => {
                 if (!err2) {
-                    // Save reply session
+                    // Initialize global maps
                     if (!global.GoatBot) global.GoatBot = {};
                     if (!global.GoatBot.onReply) global.GoatBot.onReply = new Map();
 
+                    // Save reply session
                     global.GoatBot.onReply.set(info2.messageID, {
                         commandName: "ai",
                         author: senderID,
@@ -56,15 +58,15 @@ module.exports.run = async ({ api, event, args }) => {
 
 // Reply handler
 module.exports.onReply = async ({ api, event, Reply }) => {
-    const { senderID, threadID, messageID, body } = event;
+    const { threadID, senderID, messageID, body } = event;
 
-    // Only handle replies from the original author
-    if (senderID !== Reply.author) return;
+    if (!Reply) return;
+    if (senderID !== Reply.author) return; // Only reply from original user
 
-    const userMsg = body.trim();
+    const userMsg = body?.trim();
     if (!userMsg) return;
 
-    // Delete previous session from map
+    // Remove old reply session
     if (global.GoatBot?.onReply) global.GoatBot.onReply.delete(messageID);
 
     try {
@@ -73,6 +75,10 @@ module.exports.onReply = async ({ api, event, Reply }) => {
 
         api.sendMessage(aiReply, threadID, (err, info) => {
             if (!err) {
+                if (!global.GoatBot) global.GoatBot = {};
+                if (!global.GoatBot.onReply) global.GoatBot.onReply = new Map();
+
+                // Save session for next reply
                 global.GoatBot.onReply.set(info.messageID, {
                     commandName: "ai",
                     author: senderID,

@@ -1,57 +1,106 @@
 const axios = require("axios");
+const API_URL = "https://metakexbyneokex.fly.dev/chat";
 
 module.exports = {
   config: {
     name: "ai",
-    version: "1.0.1",
-    credit: "—͟͟͞͞𝐂𝐘𝐁𝐄𝐑 ☢️_𖣘 -𝐁𝐎𝐓 ⚠️ 𝑻𝑬𝑨𝑴_ ☢️",
-    description: "google ai",
-    cooldowns: 0,
-    hasPermssion: 0,
-    commandCategory: "google",
-    usages: {
-      en: "{pn} message | photo reply"
+    version: "4.0",
+    role: 0,
+    author: "ONLY SIYAM 🐦",
+    description: "AI Chat using Meta AI API",
+    category: "AI",
+    usages: "/ai [your question]",
+    cooldowns: 2
+  },
+
+  onStart: async function ({ message, args, event }) {
+    const userMsg = args.join(" ");
+    const sender = event.senderID;
+    const sessionID = `session-${sender}`;
+
+    // === No message → Show Example ===
+    if (!userMsg) {
+      return message.reply(
+        "🧠 META AI Assistant\n" +
+        "Type your question below ⬇️\n\n" +
+        "Example:\n  /ai Who is the founder of Free Fire?\n\n" +
+        "Now ask your question:\n  /ai Your question here"
+      );
+    }
+
+    try {
+      const res = await axios.post(
+        API_URL,
+        {
+          message: userMsg,
+          new_conversation: true,
+          cookies: {}
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 20000
+        }
+      );
+
+      const aiReply = res.data.message || "❌ AI returned an empty response.";
+
+      return message.reply(aiReply, (err, info) => {
+        if (info) {
+          global.GoatBot.onReply.set(info.messageID, {
+            commandName: this.config.name,
+            author: sender,
+            sessionID: sessionID
+          });
+        }
+      });
+    } catch (err) {
+      return message.reply(
+        `❌ META AI Error\n\n${
+          err.response?.status ? "Status: " + err.response.status : err.message
+        }`
+      );
     }
   },
 
-  run: async ({ api, args, event }) => {
-    const input = args.join(" ");
-    const encodedApi = "aHR0cHM6Ly9hcGlzLWtlaXRoLnZlcmNlbC5hcHAvYWkvZGVlcHNlZWtWMz9xPQ==";
-    const apiUrl = Buffer.from(encodedApi, "base64").toString("utf-8");
+  onReply: async function ({ message, event, Reply }) {
+    const sender = event.senderID;
+    const userQuery = event.body?.trim();
 
-    if (event.type === "message_reply") {
-      try {
-        const imageUrl = event.messageReply.attachments[0]?.url;
-        if (!imageUrl)
-          return api.sendMessage("Please reply to an image.", event.threadID, event.messageID);
+    if (sender !== Reply.author || !userQuery) return;
 
-        const res = await axios.post(`${apiUrl}${encodeURIComponent(input || "Describe this image.")}`, {
-          image: imageUrl
-        });
+    global.GoatBot.onReply.delete(Reply.messageID);
 
-        const result = res.data.result || res.data.response || res.data.message || "No response from AI.";
-        api.sendMessage(result, event.threadID, event.messageID);
-      } catch (err) {
-        console.error("Error:", err.message);
-        api.sendMessage("processing.....", event.threadID, event.messageID);
-      }
-    } else {
-      if (!input) {
-        return api.sendMessage(
-          "Hey I'm Ai Chat Bot\nHow can I assist you today?",
-          event.threadID,
-          event.messageID
-        );
-      }
+    try {
+      const res = await axios.post(
+        API_URL,
+        {
+          message: userQuery,
+          new_conversation: false,
+          cookies: {}
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 20000
+        }
+      );
 
-      try {
-        const res = await axios.get(`${apiUrl}${encodeURIComponent(input)}`);
-        const result = res.data.result || res.data.response || res.data.message || "No response from AI.";
-        api.sendMessage(result, event.threadID, event.messageID);
-      } catch (err) {
-        console.error("Error:", err.message);
-        api.sendMessage("Boss 𝙎𝙄𝙔𝘼𝙈 re Dakh ei file gece 😑", event.threadID, event.messageID);
-      }
+      const aiReply = res.data.message || "❌ AI could not reply.";
+
+      return message.reply(aiReply, (err, info) => {
+        if (info) {
+          global.GoatBot.onReply.set(info.messageID, {
+            commandName: "ai",
+            author: sender,
+            sessionID: Reply.sessionID
+          });
+        }
+      });
+    } catch (err) {
+      return message.reply(
+        `❌ META AI Error\n\n${
+          err.response?.status ? "Status: " + err.response.status : err.message
+        }`
+      );
     }
   }
 };

@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "like2",
-  version: "1.0.1",
+  version: "1.0.2",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Like Bot (BD Server)",
+  description: "Free Fire Like Bot (Admin Only, BD Server)",
   commandCategory: "game",
   usages: "[uid]",
   cooldowns: 10
@@ -12,35 +12,52 @@ module.exports.config = {
 module.exports.languages = {
   en: {
     noArgs: "❌ Usage: %prefix%like2 7538692308",
-    sending: "⏳ Sending likes to UID: %1...",
-    error: "❌ Failed to send likes!"
+    notAdmin: "⛔ This command is for BOT ADMINS only!",
+    sending: "⏳ Sending likes to UID: %1..."
   }
 };
 
 module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
-  const { threadID, messageID } = event;
+  const { threadID, messageID, senderID } = event;
 
-  if (!args[0])
+  // 🔐 ADMIN CHECK
+  if (!global.config.ADMINBOT.includes(senderID)) {
+    return api.sendMessage(
+      getText("notAdmin"),
+      threadID,
+      messageID
+    );
+  }
+
+  if (!args[0]) {
     return api.sendMessage(
       getText("noArgs", { prefix: global.config.PREFIX }),
       threadID,
       messageID
     );
+  }
 
   const uid = args[0];
-  const region = "bd"; // 🔒 fixed BD server
-
   api.sendMessage(getText("sending", uid), threadID, messageID);
 
   try {
-    const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=${region}`;
+    const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=bd`;
     const res = await axios.get(url);
     const d = res.data;
 
-    if (d.status != 1)
-      return api.sendMessage("❌ API Response Error!", threadID, messageID);
+    // ⚠️ Daily limit hit
+    if (d.status != 1) {
+      const limitMsg = `
+👤 Player Name: ${d.PlayerNickname || "Unknown"}
+👍 Current Likes: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
 
+⚠️ This Player Already Got Maximum Likes For Today.
+`;
+      return api.sendMessage(limitMsg, threadID, messageID);
+    }
+
+    // ✅ Success
     const msg = `
 ✅ Likes Sent Successfully! 🎉
 
@@ -57,6 +74,10 @@ module.exports.run = async function ({ api, event, args, getText }) {
     api.sendMessage(msg, threadID, messageID);
 
   } catch (err) {
-    api.sendMessage(getText("error"), threadID, messageID);
+    api.sendMessage(
+      "❌ Server Error! Try again later.",
+      threadID,
+      messageID
+    );
   }
 };

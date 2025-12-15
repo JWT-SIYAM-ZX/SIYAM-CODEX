@@ -68,7 +68,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
 💖 Likes Given: ${d.LikesGivenByAPI}
 🔥 Likes After: ${d.LikesafterCommand}
 
-⚡ Powered By SIYAM BOT
+👑 ONLY SIYAM
 `;
 
     api.sendMessage(msg, threadID, messageID);

@@ -49,8 +49,8 @@ module.exports.run = async function ({ api, event, args, getText }) {
     // ⚠️ Daily limit hit
     if (d.status != 1) {
       const limitMsg = `
-👤 Player Name: ${d.PlayerNickname || "Unknown"}
-👍 Current Likes: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
+👤 𝐏𝐋𝐀𝐘𝐄𝐑 𝐍𝐀𝐌𝐄: ${d.PlayerNickname || "Unknown"}
+👍 𝐂𝐔𝐑𝐑𝐄𝐍𝐓 𝐋𝐈𝐊𝐄𝐒: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
 
 ⚠️ This Player Already Got Maximum Likes For Today.
 `;
@@ -59,16 +59,16 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
     // ✅ Success
     const msg = `
-✅ Likes Sent Successfully! 🎉
+✅ 𝙇𝙄𝙆𝙀𝙎 𝙎𝙀𝙉𝙏 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔! 🎉
 
-👤 Player Name: ${d.PlayerNickname}
-🆔 UID: ${d.UID}
+👤 𝙿𝙻𝙰𝚈𝙴𝚁 𝙽𝙰𝙼𝙴: ${d.PlayerNickname}
+🆔 𝚄𝙸𝙳: ${d.UID}
 
-❤️ Likes Before: ${d.LikesbeforeCommand}
-💖 Likes Given: ${d.LikesGivenByAPI}
-🔥 Likes After: ${d.LikesafterCommand}
+❤️ 𝙻𝙸𝙺𝙴𝚂 𝙱𝙴𝙵𝙾𝚁𝙴: ${d.LikesbeforeCommand}
+💖 𝙻𝙸𝙺𝙴𝚂 𝙶𝙸𝚅𝙴𝙽: ${d.LikesGivenByAPI}
+🔥 𝙻𝙸𝙺𝙴𝚂 𝙰𝙵𝚃𝙴𝚁: ${d.LikesafterCommand}
 
-👑 ONLY SIYAM
+👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝚈𝙰𝙼
 `;
 
     api.sendMessage(msg, threadID, messageID);

@@ -1,66 +1,62 @@
 module.exports.config = {
   name: "like2",
-  version: "1.0.1",
+  version: "1.0.0",
   hasPermssion: 0,
-  credits: "ONLY SIYAM BOT TEAM",
+  credits: "ONLY SIYAM BOT TEAM ☢️",
   description: "Send Free Fire Likes using API",
   commandCategory: "game",
-  usages: "/like2 uid",
+  usages: "[region] [uid]",
   cooldowns: 10
 };
 
-module.exports.run = async function ({ api, event, args }) {
+module.exports.languages = {
+  en: {
+    noArgs: "❌ Usage: %prefix%like2 bd 2255809105",
+    sending: "⏳ Sending likes to UID: %1...",
+    error: "❌ Failed to send likes!"
+  }
+};
+
+module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
   const { threadID, messageID } = event;
 
-  if (!args[0]) {
+  if (!args[0] || !args[1])
     return api.sendMessage(
-      "❌ UID PLZ\nExample: /like2 2255809105",
+      getText("noArgs", { prefix: global.config.PREFIX }),
       threadID,
       messageID
     );
-  }
 
-  const uid = args[0];
-  const server = "bd";
+  const region = args[0].toLowerCase();
+  const uid = args[1];
 
-  api.sendMessage("⏳ Sending likes, please wait...", threadID, messageID);
+  api.sendMessage(getText("sending", uid), threadID, messageID);
 
   try {
-    const res = await axios.get(
-      `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=${server}`
-    );
+    const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=${region}`;
+    const res = await axios.get(url);
+    const d = res.data;
 
-    const data = res.data;
+    if (d.status != 1)
+      return api.sendMessage("❌ API Error!", threadID, messageID);
 
-    // ✅ Like sent successfully
-    if (data.likesGiven) {
-      const msg = `✅ Likes Sent Successfully! 🎉
+    const msg = `
+✅ Likes Sent Successfully! 🎉
 
-👤 Player Name: ${data.playerName}
-🆔 UID: ${uid}
+👤 Player Name: ${d.PlayerNickname}
+🆔 UID: ${d.UID}
 
-❤️ Likes Before: ${data.likesBefore}
-💖 Likes Given: ${data.likesGiven}
-🎯 Total Likes Now: ${data.likesAfter}`;
+❤️ Likes Before: ${d.LikesbeforeCommand}
+💖 Likes Given: ${d.LikesGivenByAPI}
+🔥 Likes After: ${d.LikesafterCommand}
 
-      return api.sendMessage(msg, threadID, messageID);
-    }
+⚡ Powered By SIYAM BOT
+`;
 
-    // ⚠️ Daily limit reached
-    if (data.message && data.message.toLowerCase().includes("maximum")) {
-      const msg = `👤 Player Name: ${data.playerName}
-👍 Current Likes: ${data.currentLikes}
+    api.sendMessage(msg, threadID, messageID);
 
-⚠️ This Player Already Got Maximum Likes For Today.`;
-
-      return api.sendMessage(msg, threadID, messageID);
-    }
-
-    // fallback
-    api.sendMessage("❌ Unexpected response from server.", threadID, messageID);
-
-  } catch (err) {
-    api.sendMessage("❌ API Error / Server Down", threadID, messageID);
+  } catch (e) {
+    api.sendMessage(getText("error"), threadID, messageID);
   }
 };

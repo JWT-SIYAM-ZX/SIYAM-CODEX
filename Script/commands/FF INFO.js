@@ -1,17 +1,17 @@
 module.exports.config = {
     name: "get",
-    version: "1.0.3",
+    version: "1.0.6",
     hasPermssion: 0,
-    credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴_ ☢️",
-    description: "Get Free Fire user info by Region + UID in structured style",
+    credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴 ☢️",
+    description: "Get Free Fire user info + banner (default BD)",
     commandCategory: "game",
-    usages: "[region] [UID]  or  [UID]",
+    usages: "/get <uid>  OR  /get <region> <uid>",
     cooldowns: 5
 };
 
 module.exports.languages = {
     "en": {
-        "noArgs": "❌ Please enter UID. Example: %prefix%get 903437692 OR %prefix%get bd 903437692",
+        "noArgs": "❌ Please enter UID\nExample: %prefix%get 903437692",
         "fetching": "⏳ Fetching info for UID: %1...",
         "error": "❌ Error fetching info: %1"
     }
@@ -20,47 +20,48 @@ module.exports.languages = {
 function escape_md(text) {
     if (!text) return "None";
     return text.toString()
-        .replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1"); // escape markdown
+        .replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
 }
 
-module.exports.run = async function({ api, event, args, getText }) {
+module.exports.run = async function ({ api, event, args, getText }) {
     const axios = require("axios");
+    const fs = require("fs");
+    const path = require("path");
+
     const { threadID, messageID } = event;
 
-    // ✅ DEFAULT REGION = BD
-    let region = "BD";
-    let UID = null;
+    if (!args[0])
+        return api.sendMessage(
+            getText("noArgs", { prefix: global.config.PREFIX }),
+            threadID,
+            messageID
+        );
 
-    // If user gives both region & UID
-    if (args.length >= 2) {
+    // 🔥 Default region BD
+    let region = "BD";
+    let UID;
+
+    if (args.length === 1) {
+        UID = args[0];
+    } else {
         region = args[0].toUpperCase();
         UID = args[1];
-    }
-    // If user gives only UID
-    else if (args.length === 1) {
-        region = "BD";
-        UID = args[0];
-    }
-    else {
-        return api.sendMessage(getText("noArgs", { prefix: global.config.PREFIX }), threadID, messageID);
     }
 
     api.sendMessage(getText("fetching", UID), threadID, messageID);
 
     try {
-        const url = `https://danger-info-alpha.vercel.app/accinfo?uid=${UID}&key=DANGERxINFO`;
-        const res = await axios.get(url);
+        const infoUrl = `https://danger-info-alpha.vercel.app/accinfo?uid=${UID}&key=DANGERxINFO`;
+        const res = await axios.get(infoUrl);
         const data = res.data;
 
-        // extract nested objects
         const b = data.basicInfo || {};
         const c = data.clanBasicInfo || {};
-        const cap = (c.clanCaptain || {});
+        const cap = c.clanCaptain || {};
         const pet = data.petInfo || {};
         const cr = data.creditScoreInfo || {};
         const s = data.socialInfo || {};
 
-        // format structured message
         let msg = `
 🧑‍💻 *Basic Info*
 ├─ Name: ${escape_md(b.nickname)}
@@ -105,17 +106,39 @@ module.exports.run = async function({ api, event, args, getText }) {
 
 💯 *Credit Score*
 ├─ Score: ${cr.creditScore || "0"}
-├─ Summary Period: ${cr.periodicSummaryStartTime || "N/A"} to ${cr.periodicSummaryEndTime || "N/A"}
+├─ Summary Period: ${cr.periodicSummaryStartTime || "N/A"} → ${cr.periodicSummaryEndTime || "N/A"}
 └─ Reward State: ${cr.rewardState || "N/A"}
 
 📜 *Social*
 ├─ BR Rank Public: ${s.brRankShow || "False"}
 ├─ CS Rank Public: ${s.csRankShow || "False"}
 └─ Bio: ${escape_md(s.signature || "None")}
+`;
 
-CREADIT: ONLY SIYAM`;
+        api.sendMessage(msg, threadID, async (err, info) => {
+            if (err) return;
 
-        api.sendMessage(msg, threadID, messageID);
+            try {
+                const bannerUrl = `https://danger-banner.vercel.app/banner?uid=${UID}`;
+                const imgPath = path.join(__dirname, "cache", `banner_${UID}.jpg`);
+
+                const img = await axios.get(bannerUrl, { responseType: "arraybuffer" });
+                fs.writeFileSync(imgPath, Buffer.from(img.data));
+
+                api.sendMessage(
+                    {
+                        body: `🎮 Free Fire Banner\n🆔 UID: ${UID}`,
+                        attachment: fs.createReadStream(imgPath)
+                    },
+                    threadID,
+                    () => fs.unlinkSync(imgPath),
+                    info.messageID
+                );
+
+            } catch (e) {
+                api.sendMessage("❌ Banner load করা যায়নি!", threadID, null, info.messageID);
+            }
+        }, messageID);
 
     } catch (err) {
         api.sendMessage(getText("error", err.message), threadID, messageID);

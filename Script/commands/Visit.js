@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "visit",
-  version: "1.0.2",
+  version: "1.1.0",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Visit Bot (Admin Only, BD Server)",
+  description: "Free Fire Visit Bot (Public 1000 / Admin Multi, BD Server)",
   commandCategory: "game",
   usages: "[uid] [amount]",
   cooldowns: 10
@@ -11,8 +11,8 @@ module.exports.config = {
 
 module.exports.languages = {
   en: {
-    noArgs: "❌ Usage: %prefix%visit 2255809105 2000",
-    notAdmin: "⛔ This command is for BOT ADMINS only!",
+    noArgs: "❌ Usage: %prefix%visit 2255809105 [1000/2000/3000...]",
+    notAdmin: "⛔ Only BOT ADMINS can send more than 1000 visits!",
     sending: "⏳ Sending %2 visits to UID: %1..."
   }
 };
@@ -21,13 +21,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
   const { threadID, messageID, senderID } = event;
 
-  // 🔐 ADMIN CHECK
-  if (!global.config.ADMINBOT.includes(senderID)) {
-    return api.sendMessage(getText("notAdmin"), threadID, messageID);
-  }
-
-  // ❌ UID / amount missing
-  if (!args[0] || !args[1]) {
+  if (!args[0]) {
     return api.sendMessage(
       getText("noArgs", { prefix: global.config.PREFIX }),
       threadID,
@@ -36,14 +30,28 @@ module.exports.run = async function ({ api, event, args, getText }) {
   }
 
   const uid = args[0];
-  const amount = parseInt(args[1]);
+  let amount = 1000; // default for public
 
-  if (isNaN(amount) || amount < 1000 || amount % 1000 !== 0) {
-    return api.sendMessage(
-      "❌ Amount must be like 1000, 2000, 3000, 4000...",
-      threadID,
-      messageID
-    );
+  // amount given
+  if (args[1]) {
+    // admin check
+    if (!global.config.ADMINBOT.includes(senderID)) {
+      return api.sendMessage(
+        getText("notAdmin"),
+        threadID,
+        messageID
+      );
+    }
+
+    amount = parseInt(args[1]);
+
+    if (isNaN(amount) || amount < 1000 || amount % 1000 !== 0) {
+      return api.sendMessage(
+        "❌ Amount must be like 1000, 2000, 3000, 4000...",
+        threadID,
+        messageID
+      );
+    }
   }
 
   const times = amount / 1000;
@@ -71,12 +79,12 @@ module.exports.run = async function ({ api, event, args, getText }) {
         totalFail += 1000;
       }
 
-      // ⏱️ Small delay (safe)
+      // safe delay
       await new Promise(r => setTimeout(r, 1200));
     }
 
     const msg = `
-✅ 𝙈𝙐𝙇𝙏𝙄 𝙑𝙄𝙎𝙄𝙏 𝙍𝙀𝙋𝙊𝙍𝙏 🎉
+✅ 𝙑𝙄𝙎𝙄𝙏 𝙍𝙀𝙋𝙊𝙍𝙏 🎉
 
 👤 𝙋𝙇𝘼𝙔𝙀𝙍: ${playerInfo?.nickname || "Unknown"}
 🆔 𝙐𝙄𝘿: ${uid}
@@ -89,7 +97,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
 ❤️ 𝙇𝙄𝙆𝙀𝙎: ${playerInfo?.likes || "N/A"}
 
-👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 siyam
+👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝙔𝘼𝙈
 `;
 
     api.sendMessage(msg, threadID, messageID);

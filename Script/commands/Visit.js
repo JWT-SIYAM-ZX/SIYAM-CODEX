@@ -106,7 +106,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
         totalFail += 1000;
       }
 
-      await new Promise(r => setTimeout(r, 1200)); // safe delay
+      await new Promise(r => setTimeout(r, 700)); // safe delay
     }
 
     // ✅ Increment daily count for public users

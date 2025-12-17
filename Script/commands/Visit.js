@@ -1,6 +1,6 @@
 module.exports.config = {
   name: "visit",
-  version: "1.1.0",
+  version: "1.1.1",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
   description: "Free Fire Visit Bot (Public 1000 / Admin Multi, BD Server)",
@@ -13,7 +13,7 @@ module.exports.languages = {
   en: {
     noArgs: "❌ Usage: %prefix%visit 2255809105 [1000/2000/3000...]",
     notAdmin: "⛔ Only BOT ADMINS can send more than 1000 visits!",
-    sending: "⏳ Sending %2 visits to UID: %1..."
+    sending: "⏳ SENDING VISIT %2 TO UID: %1..."
   }
 };
 
@@ -55,8 +55,10 @@ module.exports.run = async function ({ api, event, args, getText }) {
   }
 
   const times = amount / 1000;
+
+  // 🔕 SINGLE CLEAN MESSAGE (no 10x / api call spam)
   api.sendMessage(
-    `⏳ Sending ${amount} visits (${times}x API calls)...`,
+    getText("sending", uid, amount >= 1000 ? (amount >= 10000 ? (amount / 1000) + "K" : amount) : amount),
     threadID,
     messageID
   );
@@ -79,7 +81,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
         totalFail += 1000;
       }
 
-      // safe delay
+      // safe delay (silent)
       await new Promise(r => setTimeout(r, 1200));
     }
 

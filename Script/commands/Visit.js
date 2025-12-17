@@ -11,7 +11,7 @@ module.exports.config = {
 
 module.exports.languages = {
   en: {
-    noArgs: "❌ Usage: %prefix%visit 2255809105 [1000/2000/3000...]",
+    noArgs: "❌ Usage: Example .visit 2255809105",
     notAdmin: "⛔ Only BOT ADMINS can send more than 1000 visits!",
     sending: "⏳ SENDING VISIT %2 TO UID: %1..."
   }
@@ -86,7 +86,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
     }
 
     const msg = `
-✅ 𝙑𝙄𝙎𝙄𝙏 𝙍𝙀𝙋𝙊𝙍𝙏 🎉
+✅ 𝙑𝙄𝙎𝙄𝙏𝙎 𝙎𝙀𝙉𝙏 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔 🎉
 
 👤 𝙋𝙇𝘼𝙔𝙀𝙍: ${playerInfo?.nickname || "Unknown"}
 🆔 𝙐𝙄𝘿: ${uid}
@@ -99,7 +99,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
 ❤️ 𝙇𝙄𝙆𝙀𝙎: ${playerInfo?.likes || "N/A"}
 
-👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝙔𝘼𝙈
+👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝚈𝙰𝙼
 `;
 
     api.sendMessage(msg, threadID, messageID);

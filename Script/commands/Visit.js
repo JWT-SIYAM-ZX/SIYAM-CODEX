@@ -94,7 +94,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
   try {
     for (let i = 1; i <= times; i++) {
-      const url = `https://z-ihad-seam-visit-api.vercel.app/BD/${uid}`;
+      const url = `https://visits-api.vercel.app/BD/${uid}`;
       const res = await axios.get(url);
       const d = res.data;
 

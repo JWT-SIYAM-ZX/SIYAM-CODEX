@@ -12,7 +12,7 @@
   "PASSWORD": "your password",
   "OTPKEY": "",
   "BOTNAME": "𝐒𝐢𝐲𝐚𝐦 𝐂𝐡𝐚𝐭 𝐁𝐨𝐭",
-  "PREFIX": ".",
+  "PREFIX": "!",
   "reactUnsend": ["😡", "🤧", "😤", "😠"],
 
   "ADMINBOT": [

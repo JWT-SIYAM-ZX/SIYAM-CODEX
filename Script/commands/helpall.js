@@ -9,7 +9,7 @@ module.exports.config = {
  description: "Displays all available commands in one page",
  commandCategory: "system",
  usages: "[No args]",
- cooldowns: 5
+ cooldowns: 4
 };
 
 module.exports.run = async function ({ api, event }) {

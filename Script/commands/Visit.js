@@ -132,7 +132,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
 👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝚈𝙰𝙼
 
-${global.config.ADMINBOT.includes(senderID) ? "🌍 ADMIN NO LIMITS" : `📊 Your daily visits: ${dailyVisits[senderID].count}/${MAX_DAILY}`}
+${global.config.ADMINBOT.includes(senderID) ? "🌪️ ADMIN NO LIMITS" : `📊 Your daily visits: ${dailyVisits[senderID].count}/${MAX_DAILY}`}
 `;
 
     api.sendMessage(msg, threadID, messageID);

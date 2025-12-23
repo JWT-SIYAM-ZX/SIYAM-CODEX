@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "like2",
-  version: "1.0.3",
+  version: "1.0.4",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️ (Modified)",
-  description: "Free Fire Like Bot (Admin Only, BD Server) with Image",
+  description: "Free Fire Like Bot (Admin Only, BD Server) with Image + Error Handling",
   commandCategory: "game",
   usages: "[uid]",
   cooldowns: 10
@@ -42,20 +42,20 @@ module.exports.run = async function ({ api, event, args, getText }) {
   }
 
   const uid = args[0];
-
   api.sendMessage(getText("sending", uid), threadID, messageID);
 
-  // 🖼️ IMAGE LINKS (change if you want)
-  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
-  const LIMIT_IMAGE = "https://imgur.com/rlbpQWu.jpg";
+  // 🖼️ IMAGE LINKS (change your own links if needed)
+  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpeg";
+  const LIMIT_IMAGE = "https://imgur.com/rlbpQWu.jpeg";
+  const SERVER_ERROR_IMAGE = "https://imgur.com/f7SujxA.jpeg"; // Server Error image
+
+  // 📁 temp image path
+  const imgPath = path.join(__dirname, `like_${uid}.jpg`);
 
   try {
     const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=bd`;
     const res = await axios.get(url);
     const d = res.data || {};
-
-    // 📁 temp image path
-    const imgPath = path.join(__dirname, `like_${uid}.jpg`);
 
     // ⚠️ LIMIT / FAILED
     if (d.status != 1) {
@@ -114,9 +114,17 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
   } catch (err) {
     console.error("LIKE2 ERROR FULL:", err);
+
+    const imgRes = await axios.get(SERVER_ERROR_IMAGE, { responseType: "arraybuffer" });
+    fs.writeFileSync(imgPath, Buffer.from(imgRes.data));
+
     api.sendMessage(
-      "❌ Server Error! Try again later.",
+      {
+        body: "❌ Server Error! Try again later.",
+        attachment: fs.createReadStream(imgPath)
+      },
       threadID,
+      () => fs.unlinkSync(imgPath),
       messageID
     );
   }

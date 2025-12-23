@@ -19,15 +19,17 @@ module.exports.languages = {
 
 module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
+  const fs = require("fs");
+  const request = require("request");
   const { threadID, messageID, senderID } = event;
+
+  // 🖼️ IMAGE LINKS (IMGUR)
+  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
+  const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpg";
 
   // 🔐 ADMIN CHECK
   if (!global.config.ADMINBOT.includes(senderID)) {
-    return api.sendMessage(
-      getText("notAdmin"),
-      threadID,
-      messageID
-    );
+    return api.sendMessage(getText("notAdmin"), threadID, messageID);
   }
 
   if (!args[0]) {
@@ -46,18 +48,26 @@ module.exports.run = async function ({ api, event, args, getText }) {
     const res = await axios.get(url);
     const d = res.data;
 
-    // ⚠️ Daily limit hit
+    // ❌ LIMIT / FAILED
     if (d.status != 1) {
-      const limitMsg = `
+      const msg = `
 👤 𝐏𝐋𝐀𝐘𝐄𝐑 𝐍𝐀𝐌𝐄: ${d.PlayerNickname || "Unknown"}
 👍 𝐂𝐔𝐑𝐑𝐄𝐍𝐓 𝐋𝐈𝐊𝐄𝐒: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
 
 ⚠️ This Player Already Got Maximum Likes For Today.
 `;
-      return api.sendMessage(limitMsg, threadID, messageID);
+
+      return api.sendMessage(
+        {
+          body: msg,
+          attachment: request(FAILED_IMAGE)
+        },
+        threadID,
+        messageID
+      );
     }
 
-    // ✅ Success
+    // ✅ SUCCESS
     const msg = `
 ✅ 𝙇𝙄𝙆𝙀𝙎 𝙎𝙀𝙉𝙏 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔! 🎉
 
@@ -71,11 +81,21 @@ module.exports.run = async function ({ api, event, args, getText }) {
 👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝚈𝙰𝙼
 `;
 
-    api.sendMessage(msg, threadID, messageID);
+    api.sendMessage(
+      {
+        body: msg,
+        attachment: request(SUCCESS_IMAGE)
+      },
+      threadID,
+      messageID
+    );
 
   } catch (err) {
     api.sendMessage(
-      "❌ Server Error! Try again later.",
+      {
+        body: "❌ Server Error! Try again later.",
+        attachment: request(FAILED_IMAGE)
+      },
       threadID,
       messageID
     );

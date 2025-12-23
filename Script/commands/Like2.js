@@ -1,10 +1,10 @@
 module.exports.config = {
   name: "like2",
-  version: "1.0.5",
-  hasPermssion: 2,
-  credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Like Bot (Admin Only, BD Server)",
-  commandCategory: "admin",
+  version: "1.0.3",
+  hasPermssion: 0,
+  credits: "ONLY SIYAM BOT TEAM ☢️ (Modified)",
+  description: "Free Fire Like Bot (Admin Only, BD Server) with Image",
+  commandCategory: "game",
   usages: "[uid]",
   cooldowns: 10
 };
@@ -12,25 +12,27 @@ module.exports.config = {
 module.exports.languages = {
   en: {
     noArgs: "❌ Usage: %prefix%like2 7538692308",
+    notAdmin: "⛔ This command is for BOT ADMINS only!",
     sending: "⏳ Sending likes to UID: %1..."
   }
 };
 
 module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
-  const https = require("https");
+  const fs = require("fs");
+  const path = require("path");
   const { threadID, messageID, senderID } = event;
 
-  function getStream(url) {
-    return https.get(url);
+  // 🔐 ADMIN CHECK
+  if (!global.config.ADMINBOT.includes(senderID)) {
+    return api.sendMessage(
+      getText("notAdmin"),
+      threadID,
+      messageID
+    );
   }
 
-  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
-  const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpg";
-
-  // 🔒 ADMIN ONLY (SILENT)
-  if (!global.config.ADMINBOT.includes(senderID)) return;
-
+  // ❌ UID missing
   if (!args[0]) {
     return api.sendMessage(
       getText("noArgs", { prefix: global.config.PREFIX }),
@@ -40,75 +42,80 @@ module.exports.run = async function ({ api, event, args, getText }) {
   }
 
   const uid = args[0];
+
   api.sendMessage(getText("sending", uid), threadID, messageID);
+
+  // 🖼️ IMAGE LINKS (change if you want)
+  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
+  const LIMIT_IMAGE = "https://imgur.com/rlbpQWu.jpg";
 
   try {
     const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=bd`;
+    const res = await axios.get(url);
+    const d = res.data || {};
 
-    const res = await axios.get(url, { timeout: 15000 });
+    // 📁 temp image path
+    const imgPath = path.join(__dirname, `like_${uid}.jpg`);
 
-    if (!res.data || typeof res.data !== "object") {
-      return api.sendMessage(
-        {
-          body: "❌ Invalid response from like server.",
-          attachment: getStream(FAILED_IMAGE)
-        },
-        threadID,
-        messageID
-      );
-    }
-
-    const d = res.data;
-
-    // ❌ LIMIT / FAIL
+    // ⚠️ LIMIT / FAILED
     if (d.status != 1) {
-      const msg = `
-👤 PLAYER NAME: ${d.PlayerNickname || "Unknown"}
-👍 CURRENT LIKES: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
+      const limitMsg = `
+⚠️ 𝐃𝐀𝐈𝐋𝐘 𝐋𝐈𝐊𝐄 𝐋𝐈𝐌𝐈𝐓 𝐑𝐄𝐀𝐂𝐇𝐄𝐃
 
-⚠️ Maximum likes reached for today.
+👤 𝐏𝐋𝐀𝐘𝐄𝐑 𝐍𝐀𝐌𝐄: ${d.PlayerNickname || "Unknown"}
+🆔 𝐔𝐈𝐃: ${uid}
+👍 𝐂𝐔𝐑𝐑𝐄𝐍𝐓 𝐋𝐈𝐊𝐄𝐒: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
 `;
+
+      const imgRes = await axios.get(LIMIT_IMAGE, {
+        responseType: "arraybuffer"
+      });
+      fs.writeFileSync(imgPath, Buffer.from(imgRes.data));
+
       return api.sendMessage(
         {
-          body: msg,
-          attachment: getStream(FAILED_IMAGE)
+          body: limitMsg,
+          attachment: fs.createReadStream(imgPath)
         },
         threadID,
+        () => fs.unlinkSync(imgPath),
         messageID
       );
     }
 
     // ✅ SUCCESS
-    const msg = `
-✅ LIKES SENT SUCCESSFULLY! 🎉
+    const successMsg = `
+✅ 𝙇𝙄𝙆𝙀𝙎 𝙎𝙀𝙉𝙏 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔 🎉
 
-👤 PLAYER NAME: ${d.PlayerNickname}
-🆔 UID: ${d.UID}
+👤 𝙋𝙇𝘼𝙔𝙀𝙍: ${d.PlayerNickname || "Unknown"}
+🆔 𝙐𝙄𝘿: ${d.UID || uid}
 
-❤️ LIKES BEFORE: ${d.LikesbeforeCommand}
-💖 LIKES GIVEN: ${d.LikesGivenByAPI}
-🔥 LIKES AFTER: ${d.LikesafterCommand}
+❤️ 𝘽𝙀𝙁𝙊𝙍𝙀: ${d.LikesbeforeCommand || "N/A"}
+💖 𝙂𝙄𝙑𝙀𝙉: ${d.LikesGivenByAPI || "N/A"}
+🔥 𝘼𝙁𝙏𝙀𝙍: ${d.LikesafterCommand || "N/A"}
 
-👑 OWNER: ONLY SIYAM
+👑 Owner: ONLY SIYAM
 `;
 
-    return api.sendMessage(
+    const imgRes = await axios.get(SUCCESS_IMAGE, {
+      responseType: "arraybuffer"
+    });
+    fs.writeFileSync(imgPath, Buffer.from(imgRes.data));
+
+    api.sendMessage(
       {
-        body: msg,
-        attachment: getStream(SUCCESS_IMAGE)
+        body: successMsg,
+        attachment: fs.createReadStream(imgPath)
       },
       threadID,
+      () => fs.unlinkSync(imgPath),
       messageID
     );
 
   } catch (err) {
-    console.log("LIKE2 ERROR FULL:", err?.code || err?.toString());
-
-    return api.sendMessage(
-      {
-        body: "❌ Like server error or timeout.\nTry again later.",
-        attachment: getStream(FAILED_IMAGE)
-      },
+    console.error("LIKE2 ERROR FULL:", err);
+    api.sendMessage(
+      "❌ Server Error! Try again later.",
       threadID,
       messageID
     );

@@ -1,10 +1,10 @@
 module.exports.config = {
   name: "like2",
-  version: "1.0.2",
-  hasPermssion: 0,
+  version: "1.0.4",
+  hasPermssion: 2, // 🔒 ADMIN ONLY
   credits: "ONLY SIYAM BOT TEAM ☢️",
   description: "Free Fire Like Bot (Admin Only, BD Server)",
-  commandCategory: "game",
+  commandCategory: "admin",
   usages: "[uid]",
   cooldowns: 10
 };
@@ -12,26 +12,23 @@ module.exports.config = {
 module.exports.languages = {
   en: {
     noArgs: "❌ Usage: %prefix%like2 7538692308",
-    notAdmin: "⛔ This command is for BOT ADMINS only!",
     sending: "⏳ Sending likes to UID: %1..."
   }
 };
 
 module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
-  const fs = require("fs");
   const request = require("request");
   const { threadID, messageID, senderID } = event;
 
-  // 🖼️ IMAGE LINKS (IMGUR)
-  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpeg";
-  const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpeg";
+  // 🖼️ IMGUR IMAGE LINKS (CHANGE THESE)
+  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
+  const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpg";
 
-  // 🔐 ADMIN CHECK
-  if (!global.config.ADMINBOT.includes(senderID)) {
-    return api.sendMessage(getText("notAdmin"), threadID, messageID);
-  }
+  // 🔐 HARD ADMIN CHECK (NO MESSAGE FOR NON-ADMIN)
+  if (!global.config.ADMINBOT.includes(senderID)) return;
 
+  // ❌ NO UID
   if (!args[0]) {
     return api.sendMessage(
       getText("noArgs", { prefix: global.config.PREFIX }),
@@ -41,22 +38,37 @@ module.exports.run = async function ({ api, event, args, getText }) {
   }
 
   const uid = args[0];
+
+  // ⏳ LOADING
   api.sendMessage(getText("sending", uid), threadID, messageID);
 
   try {
     const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=bd`;
-    const res = await axios.get(url);
+
+    // ⏱️ TIMEOUT (NO HANG)
+    const res = await axios.get(url, { timeout: 15000 });
+
+    if (!res.data) {
+      return api.sendMessage(
+        {
+          body: "❌ Like server did not respond.\nTry again later.",
+          attachment: request(FAILED_IMAGE)
+        },
+        threadID,
+        messageID
+      );
+    }
+
     const d = res.data;
 
     // ❌ LIMIT / FAILED
     if (d.status != 1) {
       const msg = `
-👤 𝐏𝐋𝐀𝐘𝐄𝐑 𝐍𝐀𝐌𝐄: ${d.PlayerNickname || "Unknown"}
-👍 𝐂𝐔𝐑𝐑𝐄𝐍𝐓 𝐋𝐈𝐊𝐄𝐒: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
+👤 PLAYER NAME: ${d.PlayerNickname || "Unknown"}
+👍 CURRENT LIKES: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
 
-⚠️ This Player Already Got Maximum Likes For Today.
+⚠️ This player already got maximum likes for today.
 `;
-
       return api.sendMessage(
         {
           body: msg,
@@ -69,19 +81,19 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
     // ✅ SUCCESS
     const msg = `
-✅ 𝙇𝙄𝙆𝙀𝙎 𝙎𝙀𝙉𝙏 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔! 🎉
+✅ LIKES SENT SUCCESSFULLY! 🎉
 
-👤 𝙿𝙻𝙰𝚈𝙴𝚁 𝙽𝙰𝙼𝙴: ${d.PlayerNickname}
-🆔 𝚄𝙸𝙳: ${d.UID}
+👤 PLAYER NAME: ${d.PlayerNickname}
+🆔 UID: ${d.UID}
 
-❤️ 𝙻𝙸𝙺𝙴𝚂 𝙱𝙴𝙵𝙾𝚁𝙴: ${d.LikesbeforeCommand}
-💖 𝙻𝙸𝙺𝙴𝚂 𝙶𝙸𝚅𝙴𝙽: ${d.LikesGivenByAPI}
-🔥 𝙻𝙸𝙺𝙴𝚂 𝙰𝙵𝚃𝙴𝚁: ${d.LikesafterCommand}
+❤️ LIKES BEFORE: ${d.LikesbeforeCommand}
+💖 LIKES GIVEN: ${d.LikesGivenByAPI}
+🔥 LIKES AFTER: ${d.LikesafterCommand}
 
-👑 𝙊𝙬𝙣𝙚𝙧: 𝙾𝙽𝙻𝚈 𝚂𝙸𝚈𝙰𝙼
+👑 OWNER: ONLY SIYAM
 `;
 
-    api.sendMessage(
+    return api.sendMessage(
       {
         body: msg,
         attachment: request(SUCCESS_IMAGE)
@@ -91,9 +103,10 @@ module.exports.run = async function ({ api, event, args, getText }) {
     );
 
   } catch (err) {
-    api.sendMessage(
+    console.log("LIKE2 ERROR:", err.message);
+    return api.sendMessage(
       {
-        body: "❌ Server Error! Try again later.",
+        body: "❌ Like server timeout or down.\nPlease try again later.",
         attachment: request(FAILED_IMAGE)
       },
       threadID,

@@ -1,7 +1,7 @@
 module.exports.config = {
   name: "like2",
-  version: "1.0.4",
-  hasPermssion: 2, // 🔒 ADMIN ONLY
+  version: "1.0.5",
+  hasPermssion: 2,
   credits: "ONLY SIYAM BOT TEAM ☢️",
   description: "Free Fire Like Bot (Admin Only, BD Server)",
   commandCategory: "admin",
@@ -18,17 +18,19 @@ module.exports.languages = {
 
 module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
-  const request = require("request");
+  const https = require("https");
   const { threadID, messageID, senderID } = event;
 
-  // 🖼️ IMGUR IMAGE LINKS (CHANGE THESE)
+  function getStream(url) {
+    return https.get(url);
+  }
+
   const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
   const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpg";
 
-  // 🔐 HARD ADMIN CHECK (NO MESSAGE FOR NON-ADMIN)
+  // 🔒 ADMIN ONLY (SILENT)
   if (!global.config.ADMINBOT.includes(senderID)) return;
 
-  // ❌ NO UID
   if (!args[0]) {
     return api.sendMessage(
       getText("noArgs", { prefix: global.config.PREFIX }),
@@ -38,21 +40,18 @@ module.exports.run = async function ({ api, event, args, getText }) {
   }
 
   const uid = args[0];
-
-  // ⏳ LOADING
   api.sendMessage(getText("sending", uid), threadID, messageID);
 
   try {
     const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=bd`;
 
-    // ⏱️ TIMEOUT (NO HANG)
     const res = await axios.get(url, { timeout: 15000 });
 
-    if (!res.data) {
+    if (!res.data || typeof res.data !== "object") {
       return api.sendMessage(
         {
-          body: "❌ Like server did not respond.\nTry again later.",
-          attachment: request(FAILED_IMAGE)
+          body: "❌ Invalid response from like server.",
+          attachment: getStream(FAILED_IMAGE)
         },
         threadID,
         messageID
@@ -61,18 +60,18 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
     const d = res.data;
 
-    // ❌ LIMIT / FAILED
+    // ❌ LIMIT / FAIL
     if (d.status != 1) {
       const msg = `
 👤 PLAYER NAME: ${d.PlayerNickname || "Unknown"}
 👍 CURRENT LIKES: ${d.LikesafterCommand || d.LikesbeforeCommand || "N/A"}
 
-⚠️ This player already got maximum likes for today.
+⚠️ Maximum likes reached for today.
 `;
       return api.sendMessage(
         {
           body: msg,
-          attachment: request(FAILED_IMAGE)
+          attachment: getStream(FAILED_IMAGE)
         },
         threadID,
         messageID
@@ -96,18 +95,19 @@ module.exports.run = async function ({ api, event, args, getText }) {
     return api.sendMessage(
       {
         body: msg,
-        attachment: request(SUCCESS_IMAGE)
+        attachment: getStream(SUCCESS_IMAGE)
       },
       threadID,
       messageID
     );
 
   } catch (err) {
-    console.log("LIKE2 ERROR:", err.message);
+    console.log("LIKE2 ERROR FULL:", err?.code || err?.toString());
+
     return api.sendMessage(
       {
-        body: "❌ Like server timeout or down.\nPlease try again later.",
-        attachment: request(FAILED_IMAGE)
+        body: "❌ Like server error or timeout.\nTry again later.",
+        attachment: getStream(FAILED_IMAGE)
       },
       threadID,
       messageID

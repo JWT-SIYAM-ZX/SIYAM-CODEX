@@ -24,8 +24,8 @@ module.exports.run = async function ({ api, event, args, getText }) {
   const { threadID, messageID, senderID } = event;
 
   // 🖼️ IMAGE LINKS (IMGUR)
-  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpg";
-  const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpg";
+  const SUCCESS_IMAGE = "https://imgur.com/hPiJidn.jpeg";
+  const FAILED_IMAGE  = "https://imgur.com/rlbpQWu.jpeg";
 
   // 🔐 ADMIN CHECK
   if (!global.config.ADMINBOT.includes(senderID)) {

@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "eventinfo",
-  version: "1.3.0",
+  version: "1.4.0",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Event Info (Text + Image from API)",
+  description: "Free Fire Event Info (All Images + Names)",
   commandCategory: "game",
   usages: "/eventinfo <region>",
   cooldowns: 5
@@ -16,10 +16,9 @@ module.exports.run = async function ({ api, event, args }) {
 
   const { threadID, messageID } = event;
   const region = (args[0] || "BD").toUpperCase();
-  const today = new Date().toISOString().split("T")[0];
 
   try {
-    // 🔹 Fetch event API
+    // 🔹 Fetch API
     const infoUrl = `https://danger-event-info.vercel.app/event?region=${region}&key=DANGERxEVENT`;
     const res = await axios.get(infoUrl);
     const data = res.data;
@@ -32,33 +31,58 @@ module.exports.run = async function ({ api, event, args }) {
       );
     }
 
-    const totalEvents = data.events.length;
+    const events = data.events;
 
-    // ✅ First event image (main banner)
-    const imageUrl = data.events[0].image_url;
-
-    // 📝 Text (UPPER)
-    const text =
+    // 📝 First summary message
+    await api.sendMessage(
 `🎉 Free Fire Events (${region})
 
-📅 Date: ${data.date || today}
-📊 Total Events: ${totalEvents}`;
+📅 Date: ${data.date || "N/A"}
+📊 Total Events: ${events.length}
 
-    // 🖼️ Download image
-    const imgPath = path.join(__dirname, "cache", `event_${region}.jpg`);
-    const img = await axios.get(imageUrl, { responseType: "arraybuffer" });
-    fs.writeFileSync(imgPath, img.data);
-
-    // 📤 Send text + image together
-    api.sendMessage(
-      {
-        body: text,
-        attachment: fs.createReadStream(imgPath)
-      },
-      threadID,
-      () => fs.unlinkSync(imgPath),
-      messageID
+⬇️ Event details below`,
+      threadID
     );
+
+    // 📁 cache dir
+    const cacheDir = path.join(__dirname, "cache");
+    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+
+    // 🔁 Send events one by one
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      if (!ev.image_url) continue;
+
+      const imgPath = path.join(cacheDir, `event_${region}_${i}.jpg`);
+
+      try {
+        const img = await axios.get(ev.image_url, {
+          responseType: "arraybuffer",
+          timeout: 15000
+        });
+        fs.writeFileSync(imgPath, img.data);
+
+        // 📨 Text + Image together (NAME first)
+        await api.sendMessage(
+          {
+            body: `🎯 Event ${i + 1}\n📝 ${ev.title || "Unknown Event"}`,
+            attachment: fs.createReadStream(imgPath)
+          },
+          threadID
+        );
+
+        fs.unlinkSync(imgPath);
+
+        // ⏳ small delay (important for Messenger)
+        await new Promise(r => setTimeout(r, 1500));
+
+      } catch (imgErr) {
+        await api.sendMessage(
+          `⚠️ ${ev.title || "Event"}\nImage load করা যায়নি`,
+          threadID
+        );
+      }
+    }
 
   } catch (err) {
     api.sendMessage(

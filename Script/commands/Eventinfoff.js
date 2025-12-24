@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "eventinfo",
-  version: "1.8.0",
+  version: "1.9.0",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Event Info (Clean names + Images + Owner)",
+  description: "Free Fire Event Info (Animation + Clean Names + Images + Owner)",
   commandCategory: "game",
   usages: "/eventinfo <region>",
   cooldowns: 5
@@ -23,20 +23,16 @@ module.exports.run = async function ({ api, event, args }) {
   function cleanTitle(title) {
     if (!title) return "Unknown Event";
     let t = title;
-
-    // Remove resolution prefix (digits + x + digits + _)
     t = t.replace(/^\d+x\d+_/, "");
-
-    // Replace underscores with spaces
     t = t.replace(/_/g, " ");
-
-    // Optional: add space before capital letters (camelcase)
     t = t.replace(/([a-z])([A-Z])/g, "$1 $2");
-
     return t.trim();
   }
 
   try {
+    // 🔹 Send animation message first
+    const animMsg = await api.sendMessage(`⏳ Get Event info for ${region}...`, threadID);
+
     // 🔹 Fetch event API
     const infoUrl = `https://danger-event-info.vercel.app/event?region=${region}&key=DANGERxEVENT`;
     const res = await axios.get(infoUrl);
@@ -45,8 +41,7 @@ module.exports.run = async function ({ api, event, args }) {
     if (!data || !Array.isArray(data.events) || data.events.length === 0) {
       return api.sendMessage(
         `❌ No events found for region: ${region}`,
-        threadID,
-        messageID
+        threadID
       );
     }
 

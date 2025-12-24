@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "eventinfo",
-  version: "1.7.0",
+  version: "1.8.0",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Event Info (Owner line added)",
+  description: "Free Fire Event Info (Clean names + Images + Owner)",
   commandCategory: "game",
   usages: "/eventinfo <region>",
   cooldowns: 5
@@ -88,8 +88,8 @@ module.exports.run = async function ({ api, event, args }) {
 
         fs.unlinkSync(imgPath);
 
-        // ⏳ Small delay for Messenger stability
-        await new Promise(r => setTimeout(r, 1500));
+        // ⏳ Fast delay for Messenger (0.5s)
+        await new Promise(r => setTimeout(r, 500));
 
       } catch (imgErr) {
         await api.sendMessage(

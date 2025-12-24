@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "eventinfo",
-  version: "1.4.0",
+  version: "1.7.0",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Event Info (All Images + Names)",
+  description: "Free Fire Event Info (Owner line added)",
   commandCategory: "game",
   usages: "/eventinfo <region>",
   cooldowns: 5
@@ -15,10 +15,29 @@ module.exports.run = async function ({ api, event, args }) {
   const path = require("path");
 
   const { threadID, messageID } = event;
+
+  // 🔹 Default region = BD
   const region = (args[0] || "BD").toUpperCase();
 
+  // 🔹 Function to clean event title
+  function cleanTitle(title) {
+    if (!title) return "Unknown Event";
+    let t = title;
+
+    // Remove resolution prefix (digits + x + digits + _)
+    t = t.replace(/^\d+x\d+_/, "");
+
+    // Replace underscores with spaces
+    t = t.replace(/_/g, " ");
+
+    // Optional: add space before capital letters (camelcase)
+    t = t.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+    return t.trim();
+  }
+
   try {
-    // 🔹 Fetch API
+    // 🔹 Fetch event API
     const infoUrl = `https://danger-event-info.vercel.app/event?region=${region}&key=DANGERxEVENT`;
     const res = await axios.get(infoUrl);
     const data = res.data;
@@ -35,12 +54,7 @@ module.exports.run = async function ({ api, event, args }) {
 
     // 📝 First summary message
     await api.sendMessage(
-`🎉 Free Fire Events (${region})
-
-📅 Date: ${data.date || "N/A"}
-📊 Total Events: ${events.length}
-
-⬇️ Event details below`,
+      `🎉 Free Fire Events (${region})\n\n📅 Date: ${data.date || "N/A"}\n📊 Total Events: ${events.length}\n\n⬇️ Event details below`,
       threadID
     );
 
@@ -53,6 +67,7 @@ module.exports.run = async function ({ api, event, args }) {
       const ev = events[i];
       if (!ev.image_url) continue;
 
+      const cleanName = cleanTitle(ev.title);
       const imgPath = path.join(cacheDir, `event_${region}_${i}.jpg`);
 
       try {
@@ -62,10 +77,10 @@ module.exports.run = async function ({ api, event, args }) {
         });
         fs.writeFileSync(imgPath, img.data);
 
-        // 📨 Text + Image together (NAME first)
+        // 📨 Send Text + Image together + Owner line
         await api.sendMessage(
           {
-            body: `🎯 Event ${i + 1}\n📝 ${ev.title || "Unknown Event"}`,
+            body: `🎯 Event ${i + 1}\n📝 ${cleanName}\n\n👑 Owner: ONLY SIYAM`,
             attachment: fs.createReadStream(imgPath)
           },
           threadID
@@ -73,12 +88,12 @@ module.exports.run = async function ({ api, event, args }) {
 
         fs.unlinkSync(imgPath);
 
-        // ⏳ small delay (important for Messenger)
+        // ⏳ Small delay for Messenger stability
         await new Promise(r => setTimeout(r, 1500));
 
       } catch (imgErr) {
         await api.sendMessage(
-          `⚠️ ${ev.title || "Event"}\nImage load করা যায়নি`,
+          `⚠️ ${cleanName}\nImage load করা যায়নি\n\n👑 Owner: ONLY SIYAM`,
           threadID
         );
       }

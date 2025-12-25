@@ -7,7 +7,7 @@ module.exports.config = {
   name: "diamond",
   version: "2.1.0",
   hasPermssion: 0,
-  credits: "SIYAM",
+  credits: "SIYAM ZP",
   description: "Free Fire Diamond ",
   commandCategory: "utility",
   usages: "/diamond",

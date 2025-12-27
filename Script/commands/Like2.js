@@ -42,7 +42,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
   api.sendMessage(getText("sending", uid), threadID, messageID);
 
   try {
-    const url = `https://likeziha-seam.vercel.app/like?uid=${uid}&server_name=bd`;
+    const url = `https://like-api-pi-neon.vercel.app/like?uid=${uid}&server_name=bd`;
     const res = await axios.get(url);
     const d = res.data;
 

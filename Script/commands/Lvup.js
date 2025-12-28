@@ -1,84 +1,86 @@
 module.exports.config = {
   name: "tcp",
-  aliases: ["start", "stop"],
-  version: "1.2.0",
+  version: "1.0.0",
   hasPermssion: 0,
   credits: "SIYAM BOT TEAM",
-  description: "FF SIYAM Lv Up Messenger Bot",
-  commandCategory: "game",
+  description: "FF SIYAM Lv Up Bot (single file)",
+  commandCategory: "system",
   usages: "!tcp | !start TEAMCODE | !stop",
-  cooldowns: 5
+  cooldowns: 0
 };
 
 const axios = require("axios");
-const API_BASE = "https://siyam-host-2.onrender.com";
+const API = "https://siyam-host-2.onrender.com";
 
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID, body } = event;
-  const prefix = global.config.PREFIX;
+// 🔥 MAIN MESSAGE LISTENER
+module.exports.handleEvent = async function ({ api, event }) {
+  const { body, threadID, messageID } = event;
+  if (!body) return;
 
-  const command = body.slice(prefix.length).split(" ")[0].toLowerCase();
+  const prefix = global.config.PREFIX || "!";
+  if (!body.startsWith(prefix)) return;
 
-  // 🟢 TCP = HELP
+  const args = body.slice(prefix.length).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
+
+  // 🟢 !tcp = HELP
   if (command === "tcp") {
-    const text =
+    return api.sendMessage(
       "FF SIYAM Lv Up BOT\n\n" +
       "Commands:\n\n" +
-      "1. !start TEAMCODE\n" +
-      "2. !stop\n\n" +
+      "!start TEAMCODE\n" +
+      "!stop\n\n" +
       "Example:\n" +
-      "!start ABC123";
-
-    return api.sendMessage(text, threadID, messageID);
+      "!start ABC123",
+      threadID,
+      messageID
+    );
   }
 
-  // 🟢 START
+  // 🟢 !start TEAMCODE
   if (command === "start") {
     if (!args[0]) {
       return api.sendMessage(
-        "❌ TEAMCODE missing!\nExample:\n!start ABC123",
+        "❌ TEAMCODE missing\nExample:\n!start ABC123",
         threadID,
         messageID
       );
     }
 
-    const teamCode = args[0];
-
     try {
-      await axios.get(`${API_BASE}/start/${teamCode}`);
-
+      await axios.get(`${API}/start/${args[0]}`);
       return api.sendMessage(
-        "✅ BOT STARTED SUCCESSFULLY\n\nTeam Code: " + teamCode,
+        "✅ BOT STARTED SUCCESSFULLY\nTeam Code: " + args[0],
         threadID,
         messageID
       );
-
-    } catch (err) {
+    } catch (e) {
       return api.sendMessage(
-        "❌ Failed to start bot\nError: " + err.message,
+        "❌ Failed to start bot\nError: " + e.message,
         threadID,
         messageID
       );
     }
   }
 
-  // 🔴 STOP
+  // 🔴 !stop
   if (command === "stop") {
     try {
-      await axios.get(`${API_BASE}/stop`);
-
+      await axios.get(`${API}/stop`);
       return api.sendMessage(
         "🛑 BOT STOPPED SUCCESSFULLY",
         threadID,
         messageID
       );
-
-    } catch (err) {
+    } catch (e) {
       return api.sendMessage(
-        "❌ Failed to stop bot\nError: " + err.message,
+        "❌ Failed to stop bot\nError: " + e.message,
         threadID,
         messageID
       );
     }
   }
 };
+
+// ⚠️ empty run (required)
+module.exports.run = async function () {};

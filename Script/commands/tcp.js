@@ -1,11 +1,11 @@
 module.exports.config = {
   name: "tcp",
-  version: "1.0.0",
+  version: "1.2.0",
   hasPermssion: 0,
   credits: "SIYAM BOT TEAM",
-  description: "FF SIYAM Lv Up Bot (single file)",
+  description: "FF SIYAM Lv Up Bot (tcp/start/stop/status)",
   commandCategory: "system",
-  usages: "!tcp | !start TEAMCODE | !stop",
+  usages: "!tcp | !start TEAMCODE | !stop | !status",
   cooldowns: 0
 };
 
@@ -27,11 +27,30 @@ module.exports.handleEvent = async function ({ api, event }) {
   if (command === "tcp") {
     return api.sendMessage(
       "FF SIYAM Lv Up BOT\n\n" +
-      "Commands:\n\n" +
-      "!start TEAMCODE\n" +
-      "!stop\n\n" +
-      "Example:\n" +
-      "!start ABC123",
+      "Available Commands:\n\n" +
+      "!start TEAMCODE  → Start auto bot\n" +
+      "!stop            → Stop bot\n" +
+      "!status          → Check bot status\n\n" +
+      "━━━━━━━━━━━━━━━━━━\n" +
+      "HOW TO RUN THE BOT (IMPORTANT):\n\n" +
+      "Step 1:\n" +
+      "• Open Free Fire\n" +
+      "• Go to Lone Wolf mode\n\n" +
+      "Step 2:\n" +
+      "• Select the map: Lone Wolf\n" +
+      "• Then select: DUEL MODE\n\n" +
+      "Step 3:\n" 
+      "• Copy the TEAM CODE\n\n" +
+      "Step 4:\n" +
+      "• Come back to Messenger\n" +
+      "• Type command like this:\n\n" +
+      "!start >Your LW teamcode<\n\n" +
+      "Example\n" +
+      "!start 1234567\n" +
+      "━━━━━━━━━━━━━━━━━━\n" +
+      "Note:\n" +
+      "• Do NOT start the match manually\n" +
+      "• Let the bot handle everything\n",
       threadID,
       messageID
     );
@@ -50,7 +69,7 @@ module.exports.handleEvent = async function ({ api, event }) {
     try {
       await axios.get(`${API}/start/${args[0]}`);
       return api.sendMessage(
-        "✅ BOT STARTED SUCCESSFULLY\nTeam Code: " + args[0],
+        "✅ BOT STARTED SUCCESSFULLY\n\nTeam Code: " + args[0],
         threadID,
         messageID
       );
@@ -80,7 +99,29 @@ module.exports.handleEvent = async function ({ api, event }) {
       );
     }
   }
+
+  // 🔵 !status
+  if (command === "status") {
+    try {
+      const res = await axios.get(API);
+
+      return api.sendMessage(
+        "📊 BOT STATUS\n\n" +
+        "BOT Status: ONLINE ✅\n\n" +
+        "Live Response:\n" +
+        res.data.toString().slice(0, 1500),
+        threadID,
+        messageID
+      );
+    } catch (e) {
+      return api.sendMessage(
+        "❌ BOT OFFLINE\nError: " + e.message,
+        threadID,
+        messageID
+      );
+    }
+  }
 };
 
-// ⚠️ empty run (required)
+// required empty run
 module.exports.run = async function () {};

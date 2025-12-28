@@ -1,6 +1,6 @@
 module.exports.config = {
     name: "get",
-    version: "1.0.8",
+    version: "1.0.9",
     hasPermssion: 0,
     credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴 ☢️",
     description: "Get Free Fire user info + banner + outfit (default BD)",
@@ -37,6 +37,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
         );
     }
 
+    // ===== Default Region =====
     let region = "BD";
     let UID;
 
@@ -52,8 +53,8 @@ module.exports.run = async function ({ api, event, args, getText }) {
     try {
         // ================= INFO API =================
         const infoUrl = `https://danger-info-alpha.vercel.app/accinfo?uid=${UID}&key=DANGERxINFO`;
-        const res = await axios.get(infoUrl);
-        const data = res.data;
+        const res = await axios.get(infoUrl, { timeout: 15000 });
+        const data = res.data || {};
 
         const b = data.basicInfo || {};
         const c = data.clanBasicInfo || {};
@@ -119,12 +120,20 @@ module.exports.run = async function ({ api, event, args, getText }) {
         api.sendMessage(msg, threadID, async (err, infoMsg) => {
             if (err) return;
 
+            const cacheDir = path.join(__dirname, "cache");
+            if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+
             // ================= BANNER =================
             try {
                 const bannerUrl = `https://danger-banner.vercel.app/banner?uid=${UID}`;
-                const bannerPath = path.join(__dirname, "cache", `banner_${UID}.jpg`);
+                const bannerPath = path.join(cacheDir, `banner_${UID}.jpg`);
 
-                const bannerImg = await axios.get(bannerUrl, { responseType: "arraybuffer" });
+                const bannerImg = await axios.get(bannerUrl, {
+                    responseType: "arraybuffer",
+                    headers: { "User-Agent": "Mozilla/5.0" },
+                    timeout: 15000
+                });
+
                 fs.writeFileSync(bannerPath, Buffer.from(bannerImg.data));
 
                 api.sendMessage(
@@ -139,9 +148,17 @@ module.exports.run = async function ({ api, event, args, getText }) {
                         // ================= OUTFIT =================
                         try {
                             const outfitUrl = `https://danger-info-alpha.vercel.app/outfit-image?uid=${UID}&key=DANGER-OUTFIT`;
-                            const outfitPath = path.join(__dirname, "cache", `outfit_${UID}.jpg`);
+                            const outfitPath = path.join(cacheDir, `outfit_${UID}.png`);
 
-                            const outfitImg = await axios.get(outfitUrl, { responseType: "arraybuffer" });
+                            const outfitImg = await axios.get(outfitUrl, {
+                                responseType: "arraybuffer",
+                                headers: {
+                                    "User-Agent": "Mozilla/5.0",
+                                    "Accept": "image/*"
+                                },
+                                timeout: 15000
+                            });
+
                             fs.writeFileSync(outfitPath, Buffer.from(outfitImg.data));
 
                             api.sendMessage(
@@ -155,7 +172,12 @@ module.exports.run = async function ({ api, event, args, getText }) {
                             );
 
                         } catch (e) {
-                            api.sendMessage("❌ Outfit image load করা যায়নি!", threadID, null, infoMsg.messageID);
+                            api.sendMessage(
+                                "❌ Outfit image load করা যায়নি!\n⚠️ UID invalid বা Outfit private",
+                                threadID,
+                                null,
+                                infoMsg.messageID
+                            );
                         }
                     },
                     infoMsg.messageID

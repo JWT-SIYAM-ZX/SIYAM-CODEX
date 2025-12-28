@@ -1,9 +1,9 @@
 module.exports.config = {
     name: "get",
-    version: "1.0.9",
+    version: "2.0.0",
     hasPermssion: 0,
     credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴 ☢️",
-    description: "Get Free Fire user info + banner + outfit (default BD)",
+    description: "Get Free Fire user info + banner + outfit (fixed)",
     commandCategory: "game",
     usages: "/get <uid>  OR  /get <region> <uid>",
     cooldowns: 5
@@ -26,6 +26,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
     const axios = require("axios");
     const fs = require("fs");
     const path = require("path");
+    const request = require("request");
 
     const { threadID, messageID } = event;
 
@@ -37,7 +38,6 @@ module.exports.run = async function ({ api, event, args, getText }) {
         );
     }
 
-    // ===== Default Region =====
     let region = "BD";
     let UID;
 
@@ -123,7 +123,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
             const cacheDir = path.join(__dirname, "cache");
             if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-            // ================= BANNER =================
+            // ================= BANNER (FILE OK) =================
             try {
                 const bannerUrl = `https://danger-banner.vercel.app/banner?uid=${UID}`;
                 const bannerPath = path.join(cacheDir, `banner_${UID}.jpg`);
@@ -142,38 +142,27 @@ module.exports.run = async function ({ api, event, args, getText }) {
                         attachment: fs.createReadStream(bannerPath)
                     },
                     threadID,
-                    async () => {
+                    () => {
                         fs.unlinkSync(bannerPath);
 
-                        // ================= OUTFIT =================
+                        // ================= OUTFIT (STREAM FIX) =================
                         try {
-                            const outfitUrl = `https://danger-info-alpha.vercel.app/outfit-image?uid=${UID}&key=DANGER-OUTFIT`;
-                            const outfitPath = path.join(cacheDir, `outfit_${UID}.png`);
-
-                            const outfitImg = await axios.get(outfitUrl, {
-                                responseType: "arraybuffer",
-                                headers: {
-                                    "User-Agent": "Mozilla/5.0",
-                                    "Accept": "image/*"
-                                },
-                                timeout: 15000
-                            });
-
-                            fs.writeFileSync(outfitPath, Buffer.from(outfitImg.data));
+                            const outfitUrl =
+                                `https://danger-info-alpha.vercel.app/outfit-image?uid=${UID}&key=DANGER-OUTFIT`;
 
                             api.sendMessage(
                                 {
                                     body: `👕 Free Fire Outfit\n🆔 UID: ${UID}`,
-                                    attachment: fs.createReadStream(outfitPath)
+                                    attachment: request(outfitUrl)
                                 },
                                 threadID,
-                                () => fs.unlinkSync(outfitPath),
+                                null,
                                 infoMsg.messageID
                             );
 
                         } catch (e) {
                             api.sendMessage(
-                                "❌ Outfit image load করা যায়নি!\n⚠️ UID invalid বা Outfit private",
+                                "❌ Outfit image load করা যায়নি!",
                                 threadID,
                                 null,
                                 infoMsg.messageID

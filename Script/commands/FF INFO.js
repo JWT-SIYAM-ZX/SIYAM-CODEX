@@ -1,26 +1,25 @@
 module.exports.config = {
     name: "get",
-    version: "1.0.6",
+    version: "1.0.8",
     hasPermssion: 0,
     credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴 ☢️",
-    description: "Get Free Fire user info + banner (default BD)",
+    description: "Get Free Fire user info + banner + outfit (default BD)",
     commandCategory: "game",
     usages: "/get <uid>  OR  /get <region> <uid>",
     cooldowns: 5
 };
 
 module.exports.languages = {
-    "en": {
-        "noArgs": "❌ Please enter UID\nExample: %prefix%get 903437692",
-        "fetching": "⏳ Fetching info for UID: %1...",
-        "error": "❌ Error fetching info: %1"
+    en: {
+        noArgs: "❌ Please enter UID\nExample: %prefix%get 903437692",
+        fetching: "⏳ Fetching info for UID: %1...",
+        error: "❌ Error fetching info: %1"
     }
 };
 
 function escape_md(text) {
     if (!text) return "None";
-    return text.toString()
-        .replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
+    return text.toString().replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
 }
 
 module.exports.run = async function ({ api, event, args, getText }) {
@@ -30,14 +29,14 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
     const { threadID, messageID } = event;
 
-    if (!args[0])
+    if (!args[0]) {
         return api.sendMessage(
             getText("noArgs", { prefix: global.config.PREFIX }),
             threadID,
             messageID
         );
+    }
 
-    // 🔥 Default region BD
     let region = "BD";
     let UID;
 
@@ -51,6 +50,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
     api.sendMessage(getText("fetching", UID), threadID, messageID);
 
     try {
+        // ================= INFO API =================
         const infoUrl = `https://danger-info-alpha.vercel.app/accinfo?uid=${UID}&key=DANGERxINFO`;
         const res = await axios.get(infoUrl);
         const data = res.data;
@@ -115,28 +115,54 @@ module.exports.run = async function ({ api, event, args, getText }) {
 └─ Bio: ${escape_md(s.signature || "None")}
 `;
 
-        api.sendMessage(msg, threadID, async (err, info) => {
+        // ================= SEND TEXT =================
+        api.sendMessage(msg, threadID, async (err, infoMsg) => {
             if (err) return;
 
+            // ================= BANNER =================
             try {
                 const bannerUrl = `https://danger-banner.vercel.app/banner?uid=${UID}`;
-                const imgPath = path.join(__dirname, "cache", `banner_${UID}.jpg`);
+                const bannerPath = path.join(__dirname, "cache", `banner_${UID}.jpg`);
 
-                const img = await axios.get(bannerUrl, { responseType: "arraybuffer" });
-                fs.writeFileSync(imgPath, Buffer.from(img.data));
+                const bannerImg = await axios.get(bannerUrl, { responseType: "arraybuffer" });
+                fs.writeFileSync(bannerPath, Buffer.from(bannerImg.data));
 
                 api.sendMessage(
                     {
                         body: `🎮 Free Fire Banner\n🆔 UID: ${UID}`,
-                        attachment: fs.createReadStream(imgPath)
+                        attachment: fs.createReadStream(bannerPath)
                     },
                     threadID,
-                    () => fs.unlinkSync(imgPath),
-                    info.messageID
+                    async () => {
+                        fs.unlinkSync(bannerPath);
+
+                        // ================= OUTFIT =================
+                        try {
+                            const outfitUrl = `https://danger-info-alpha.vercel.app/outfit-image?uid=${UID}&key=DANGER-OUTFIT`;
+                            const outfitPath = path.join(__dirname, "cache", `outfit_${UID}.jpg`);
+
+                            const outfitImg = await axios.get(outfitUrl, { responseType: "arraybuffer" });
+                            fs.writeFileSync(outfitPath, Buffer.from(outfitImg.data));
+
+                            api.sendMessage(
+                                {
+                                    body: `👕 Free Fire Outfit\n🆔 UID: ${UID}`,
+                                    attachment: fs.createReadStream(outfitPath)
+                                },
+                                threadID,
+                                () => fs.unlinkSync(outfitPath),
+                                infoMsg.messageID
+                            );
+
+                        } catch (e) {
+                            api.sendMessage("❌ Outfit image load করা যায়নি!", threadID, null, infoMsg.messageID);
+                        }
+                    },
+                    infoMsg.messageID
                 );
 
             } catch (e) {
-                api.sendMessage("❌ Banner load করা যায়নি!", threadID, null, info.messageID);
+                api.sendMessage("❌ Banner load করা যায়নি!", threadID, null, infoMsg.messageID);
             }
         }, messageID);
 

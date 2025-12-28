@@ -1,6 +1,6 @@
 module.exports.config = {
   name: "tcp",
-  version: "1.2.0",
+  version: "1.3.0",
   hasPermssion: 0,
   credits: "SIYAM BOT TEAM",
   description: "FF SIYAM Lv Up Bot (tcp/start/stop/status)",
@@ -26,31 +26,37 @@ module.exports.handleEvent = async function ({ api, event }) {
   // 🟢 !tcp = HELP
   if (command === "tcp") {
     return api.sendMessage(
-      "FF SIYAM Lv Up BOT\n\n" +
-      "Available Commands:\n\n" +
-      "!start TEAMCODE  → Start auto bot\n" +
-      "!stop            → Stop bot\n" +
-      "!status          → Check bot status\n\n" +
-      "━━━━━━━━━━━━━━━━━━\n" +
-      "HOW TO RUN THE BOT (IMPORTANT):\n\n" +
-      "Step 1:\n" +
-      "• Open Free Fire\n" +
-      "• Go to Lone Wolf mode\n\n" +
-      "Step 2:\n" +
-      "• Select the map: Lone Wolf\n" +
-      "• Then select: DUEL MODE\n\n" +
-      "Step 3:\n" 
-      "• Copy the TEAM CODE\n\n" +
-      "Step 4:\n" +
-      "• Come back to Messenger\n" +
-      "• Type command like this:\n\n" +
-      "!start >Your LW teamcode<\n\n" +
-      "Example\n" +
-      "!start 1234567\n" +
-      "━━━━━━━━━━━━━━━━━━\n" +
-      "Note:\n" +
-      "• Do NOT start the match manually\n" +
-      "• Let the bot handle everything\n",
+`FF SIYAM Lv Up BOT
+
+Available Commands:
+!start TEAMCODE  → Start auto bot
+!stop            → Stop bot
+!status          → Check bot status
+━━━━━━━━━━━━━━━━━━
+HOW TO RUN THE BOT (IMPORTANT)
+
+Step 1:
+Open Free Fire
+• Go to Lone Wolf mode
+
+Step 2:
+• Select the map: Lone Wolf
+• Then select: DUEL MODE
+
+Step 3:
+• Copy the TEAM CODE
+
+Step 4:
+• Come back to Messenger
+• Type command like this:
+!start <Your LW teamcode>
+
+Example:
+!start 1234567
+━━━━━━━━━━━━━━━━━━
+Note:
+• Do NOT start the match manually
+• Let the bot handle everything`,
       threadID,
       messageID
     );
@@ -60,7 +66,7 @@ module.exports.handleEvent = async function ({ api, event }) {
   if (command === "start") {
     if (!args[0]) {
       return api.sendMessage(
-        "❌ TEAMCODE missing\nExample:\n!start ABC123",
+        "❌ TEAMCODE missing\nExample:\n!start 1234567",
         threadID,
         messageID
       );
@@ -108,7 +114,6 @@ module.exports.handleEvent = async function ({ api, event }) {
       return api.sendMessage(
         "📊 BOT STATUS\n\n" +
         "BOT Status: ONLINE ✅\n\n" +
-        "Live Response:\n" +
         res.data.toString().slice(0, 1500),
         threadID,
         messageID

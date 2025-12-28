@@ -5,7 +5,7 @@ module.exports.config = {
   credits: "SIYAM BOT TEAM",
   description: "FF SIYAM Lv Up Bot Controller",
   commandCategory: "system",
-  usages: "!tcp | !start TEAMCODE | !stop | !status",
+  usages: "!tcp | !stbot TEAMCODE | !tcpoff | !status",
   cooldowns: 0
 };
 
@@ -28,8 +28,8 @@ module.exports.handleEvent = async function ({ api, event }) {
 `FF SIYAM Lv Up BOT
 
 Available Commands:
-!start TEAMCODE  → Start auto bot
-!stop            → Stop bot
+!stbot TEAMCODE  → Start auto bot
+!tcpoff          → Stop bot
 !status          → Check bot status
 ━━━━━━━━━━━━━━━━━━
 HOW TO RUN THE BOT (IMPORTANT)
@@ -48,10 +48,10 @@ Step 3:
 Step 4:
 • Come back to Messenger
 • Type command like this:
-!start <Your LW teamcode>
+!stbot <Your LW teamcode>
 
 Example:
-!start 1234567
+!stbot 1234567
 ━━━━━━━━━━━━━━━━━━
 Note:
 • Do NOT start the match manually
@@ -59,14 +59,14 @@ Note:
       threadID,
       messageID
     );
-    return true; // 🔒 STOP ALL OTHER BOTS
+    return true;
   }
 
-  // 🟢 START BOT → !start TEAMCODE
-  if (command === "start") {
+  // 🟢 START BOT → !stbot TEAMCODE
+  if (command === "stbot") {
     if (!args[0]) {
       api.sendMessage(
-        "❌ TEAMCODE missing\nExample:\n!start 1234567",
+        "❌ TEAMCODE missing\nExample:\n!stbot 1234567",
         threadID,
         messageID
       );
@@ -90,8 +90,8 @@ Note:
     return true;
   }
 
-  // 🔴 STOP BOT → !stop
-  if (command === "stop") {
+  // 🔴 STOP BOT → !tcpoff
+  if (command === "tcpoff") {
     try {
       await axios.get(`${API}/stop`);
       api.sendMessage(
@@ -129,7 +129,6 @@ Note:
     return true;
   }
 
-  // ❌ অন্য কোনো command ignore
   return true;
 };
 

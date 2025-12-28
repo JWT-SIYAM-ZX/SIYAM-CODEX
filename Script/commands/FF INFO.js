@@ -1,43 +1,43 @@
 module.exports.config = {
     name: "get",
-    version: "2.0.0",
+    version: "1.0.7",
     hasPermssion: 0,
     credits: "𝐎𝐍𝐋𝐘 𝐒𝐈𝐘𝐀𝐌 𝐁𝐎𝐓 𝑻𝑬𝑨𝑴 ☢️",
-    description: "Get Free Fire user info + banner + outfit (fixed)",
+    description: "Get Free Fire user info + banner + outfit (default BD)",
     commandCategory: "game",
     usages: "/get <uid>  OR  /get <region> <uid>",
     cooldowns: 5
 };
 
 module.exports.languages = {
-    en: {
-        noArgs: "❌ Please enter UID\nExample: %prefix%get 903437692",
-        fetching: "⏳ Fetching info for UID: %1...",
-        error: "❌ Error fetching info: %1"
+    "en": {
+        "noArgs": "❌ Please enter UID\nExample: %prefix%get 903437692",
+        "fetching": "⏳ Fetching info for UID: %1...",
+        "error": "❌ Error fetching info: %1"
     }
 };
 
 function escape_md(text) {
     if (!text) return "None";
-    return text.toString().replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
+    return text.toString()
+        .replace(/([_*[\]()~`>#+-=|{}.!])/g, "\\$1");
 }
 
 module.exports.run = async function ({ api, event, args, getText }) {
     const axios = require("axios");
     const fs = require("fs");
     const path = require("path");
-    const request = require("request");
 
     const { threadID, messageID } = event;
 
-    if (!args[0]) {
+    if (!args[0])
         return api.sendMessage(
             getText("noArgs", { prefix: global.config.PREFIX }),
             threadID,
             messageID
         );
-    }
 
+    // 🔥 Default region BD
     let region = "BD";
     let UID;
 
@@ -51,10 +51,9 @@ module.exports.run = async function ({ api, event, args, getText }) {
     api.sendMessage(getText("fetching", UID), threadID, messageID);
 
     try {
-        // ================= INFO API =================
         const infoUrl = `https://danger-info-alpha.vercel.app/accinfo?uid=${UID}&key=DANGERxINFO`;
-        const res = await axios.get(infoUrl, { timeout: 15000 });
-        const data = res.data || {};
+        const res = await axios.get(infoUrl);
+        const data = res.data;
 
         const b = data.basicInfo || {};
         const c = data.clanBasicInfo || {};
@@ -116,24 +115,15 @@ module.exports.run = async function ({ api, event, args, getText }) {
 └─ Bio: ${escape_md(s.signature || "None")}
 `;
 
-        // ================= SEND TEXT =================
-        api.sendMessage(msg, threadID, async (err, infoMsg) => {
+        api.sendMessage(msg, threadID, async (err, info) => {
             if (err) return;
 
-            const cacheDir = path.join(__dirname, "cache");
-            if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
-
-            // ================= BANNER (FILE OK) =================
+            // Send Banner
             try {
                 const bannerUrl = `https://danger-banner.vercel.app/banner?uid=${UID}`;
-                const bannerPath = path.join(cacheDir, `banner_${UID}.jpg`);
+                const bannerPath = path.join(__dirname, "cache", `banner_${UID}.jpg`);
 
-                const bannerImg = await axios.get(bannerUrl, {
-                    responseType: "arraybuffer",
-                    headers: { "User-Agent": "Mozilla/5.0" },
-                    timeout: 15000
-                });
-
+                const bannerImg = await axios.get(bannerUrl, { responseType: "arraybuffer" });
                 fs.writeFileSync(bannerPath, Buffer.from(bannerImg.data));
 
                 api.sendMessage(
@@ -142,39 +132,36 @@ module.exports.run = async function ({ api, event, args, getText }) {
                         attachment: fs.createReadStream(bannerPath)
                     },
                     threadID,
-                    () => {
-                        fs.unlinkSync(bannerPath);
-
-                        // ================= OUTFIT (STREAM FIX) =================
-                        try {
-                            const outfitUrl =
-                                `https://danger-info-alpha.vercel.app/outfit-image?uid=${UID}&key=DANGER-OUTFIT`;
-
-                            api.sendMessage(
-                                {
-                                    body: `👕 Free Fire Outfit\n🆔 UID: ${UID}`,
-                                    attachment: request(outfitUrl)
-                                },
-                                threadID,
-                                null,
-                                infoMsg.messageID
-                            );
-
-                        } catch (e) {
-                            api.sendMessage(
-                                "❌ Outfit image load করা যায়নি!",
-                                threadID,
-                                null,
-                                infoMsg.messageID
-                            );
-                        }
-                    },
-                    infoMsg.messageID
+                    () => fs.unlinkSync(bannerPath),
+                    info.messageID
                 );
 
             } catch (e) {
-                api.sendMessage("❌ Banner load করা যায়নি!", threadID, null, infoMsg.messageID);
+                api.sendMessage("❌ Banner load করা যায়নি!", threadID, null, info.messageID);
             }
+
+            // Send Outfit
+            try {
+                const outfitUrl = `https://danger-info-alpha.vercel.app/outfit-image?uid=${UID}&key=DANGER-OUTFIT`;
+                const outfitPath = path.join(__dirname, "cache", `outfit_${UID}.jpg`);
+
+                const outfitImg = await axios.get(outfitUrl, { responseType: "arraybuffer" });
+                fs.writeFileSync(outfitPath, Buffer.from(outfitImg.data));
+
+                api.sendMessage(
+                    {
+                        body: `🕹️ Free Fire Outfit\n🆔 UID: ${UID}`,
+                        attachment: fs.createReadStream(outfitPath)
+                    },
+                    threadID,
+                    () => fs.unlinkSync(outfitPath),
+                    info.messageID
+                );
+
+            } catch (e) {
+                api.sendMessage("❌ Outfit load করা যায়নি!", threadID, null, info.messageID);
+            }
+
         }, messageID);
 
     } catch (err) {

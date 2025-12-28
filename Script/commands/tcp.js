@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "tcp",
-  version: "1.3.0",
+  version: "1.5.0",
   hasPermssion: 0,
   credits: "SIYAM BOT TEAM",
-  description: "FF SIYAM Lv Up Bot (tcp/start/stop/status)",
+  description: "FF SIYAM Lv Up Bot Controller",
   commandCategory: "system",
   usages: "!tcp | !start TEAMCODE | !stop | !status",
   cooldowns: 0
@@ -12,7 +12,6 @@ module.exports.config = {
 const axios = require("axios");
 const API = "https://siyam-host-2.onrender.com";
 
-// 🔥 MAIN MESSAGE LISTENER
 module.exports.handleEvent = async function ({ api, event }) {
   const { body, threadID, messageID } = event;
   if (!body) return;
@@ -23,9 +22,9 @@ module.exports.handleEvent = async function ({ api, event }) {
   const args = body.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  // 🟢 !tcp = HELP
+  // 🟢 HELP → !tcp
   if (command === "tcp") {
-    return api.sendMessage(
+    api.sendMessage(
 `FF SIYAM Lv Up BOT
 
 Available Commands:
@@ -60,72 +59,78 @@ Note:
       threadID,
       messageID
     );
+    return true; // 🔒 STOP ALL OTHER BOTS
   }
 
-  // 🟢 !start TEAMCODE
+  // 🟢 START BOT → !start TEAMCODE
   if (command === "start") {
     if (!args[0]) {
-      return api.sendMessage(
+      api.sendMessage(
         "❌ TEAMCODE missing\nExample:\n!start 1234567",
         threadID,
         messageID
       );
+      return true;
     }
 
     try {
       await axios.get(`${API}/start/${args[0]}`);
-      return api.sendMessage(
-        "✅ BOT STARTED SUCCESSFULLY\n\nTeam Code: " + args[0],
+      api.sendMessage(
+        `✅ BOT STARTED SUCCESSFULLY\n\nTeam Code: ${args[0]}`,
         threadID,
         messageID
       );
     } catch (e) {
-      return api.sendMessage(
+      api.sendMessage(
         "❌ Failed to start bot\nError: " + e.message,
         threadID,
         messageID
       );
     }
+    return true;
   }
 
-  // 🔴 !stop
+  // 🔴 STOP BOT → !stop
   if (command === "stop") {
     try {
       await axios.get(`${API}/stop`);
-      return api.sendMessage(
+      api.sendMessage(
         "🛑 BOT STOPPED SUCCESSFULLY",
         threadID,
         messageID
       );
     } catch (e) {
-      return api.sendMessage(
+      api.sendMessage(
         "❌ Failed to stop bot\nError: " + e.message,
         threadID,
         messageID
       );
     }
+    return true;
   }
 
-  // 🔵 !status
+  // 🔵 STATUS → !status
   if (command === "status") {
     try {
       const res = await axios.get(API);
-
-      return api.sendMessage(
-        "📊 BOT STATUS\n\n" +
-        "BOT Status: ONLINE ✅\n\n" +
+      api.sendMessage(
+        "📊 BOT STATUS\n\nBOT Status: ONLINE ✅\n\n" +
         res.data.toString().slice(0, 1500),
         threadID,
         messageID
       );
     } catch (e) {
-      return api.sendMessage(
+      api.sendMessage(
         "❌ BOT OFFLINE\nError: " + e.message,
         threadID,
         messageID
       );
     }
+    return true;
   }
+
+  // ❌ অন্য কোনো command ignore
+  return true;
 };
 
 // required empty run

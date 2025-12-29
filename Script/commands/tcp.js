@@ -25,7 +25,16 @@ module.exports.handleEvent = async function ({ api, event }) {
   // 🟢 HELP → !tcp
   if (command === "tcp") {
     api.sendMessage(
-`FF SIYAM Lv Up BOT
+`🌪️ 𝗙𝗙 𝗦𝗜𝗬𝗔𝗠 𝗘𝗠𝗢𝗧𝗘 𝗕𝗢𝗧 🌪️
+
+🌊 Emote Use Example:
+👉 !play <teamcode> <uid1..uid6> <emote_id>
+
+Example:
+👉 !play 1550798 2970303886 909000001
+
+
+🎮 𝗙𝗙 𝗦𝗜𝗬𝗔𝗠 𝗟𝘃 𝗨𝗽 𝗕𝗢𝗧 🎮
 
 Available Commands:
 !stbot TEAMCODE  → Start auto bot

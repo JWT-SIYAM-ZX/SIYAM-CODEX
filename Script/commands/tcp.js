@@ -33,6 +33,8 @@ module.exports.handleEvent = async function ({ api, event }) {
 Example:
 👉 !play 1550798 2970303886 909000001
 
+👉 !play 1550798 2255809105 728027523 909000075
+
 
 🎮 𝗙𝗙 𝗦𝗜𝗬𝗔𝗠 𝗟𝘃 𝗨𝗽 𝗕𝗢𝗧 🎮
 
@@ -123,7 +125,7 @@ Note:
     try {
       const res = await axios.get(API);
       api.sendMessage(
-        "📊 BOT STATUS\n\nBOT Status: ONLINE ✅\n\n" +
+        "⭕ BOT STATUS\n\nBOT Status: ONLINE ✅\n\n" +
         res.data.toString().slice(0, 1500),
         threadID,
         messageID

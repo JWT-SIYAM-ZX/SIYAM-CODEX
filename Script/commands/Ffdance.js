@@ -1,18 +1,19 @@
 module.exports.config = {
-  name: "dance",
-  version: "1.2.0",
+  name: "play",
+  version: "1.0.3",
   hasPermssion: 0,
   credits: "ONLY SIYAM BOT TEAM ☢️",
-  description: "Free Fire Dance / Emote Bot (Show Only User UID)",
+  description: "Free Fire Emote Bot (Teamcode + 1–6 UID + Emote)",
   commandCategory: "game",
-  usages: "dance <team_code> <uid1> [uid2] [uid3] <emote_id>",
+  usages: "/play <teamcode> <uid1..uid6> <emote_id>",
   cooldowns: 10
 };
 
 module.exports.languages = {
   en: {
-    noArgs: "❌ Usage:\n%dance <team_code> <uid1> [uid2] [uid3] <emote_id>",
-    sending: "⏳ Performing emote...\n🎭 Emote ID: %1"
+    noArgs: "❌ Usage: %prefix%play <teamcode> <uid1..uid6> <emote_id>",
+    maxUid: "⚠️ Maximum 6 UID allowed!",
+    sending: "🎮 Sending emote...\n\nTeam: %1\nUID Count: %2\nEmote: %3"
   }
 };
 
@@ -20,68 +21,81 @@ module.exports.run = async function ({ api, event, args, getText }) {
   const axios = require("axios");
   const { threadID, messageID } = event;
 
+  // ❌ Minimum check
   if (args.length < 3) {
     return api.sendMessage(
-      getText("noArgs").replace("%dance", global.config.PREFIX + "dance"),
+      getText("noArgs", { prefix: global.config.PREFIX }),
       threadID,
       messageID
     );
   }
 
-  const teamCode = args[0];
-  const emoteId = args[args.length - 1];
+  const teamcode = args[0];
+  const emote_id = args[args.length - 1];
 
-  // user provided UIDs
-  let userUIDs = args.slice(1, args.length - 1);
+  // UID list (middle args)
+  const uidList = args.slice(1, args.length - 1);
 
-  // Auto-fill baki UID
-  const defaultUIDs = ["13562227135", "13595681767"];
-  while (userUIDs.length < 3) {
-    userUIDs.push(defaultUIDs[userUIDs.length - 1]);
+  // ❌ More than 6 UID
+  if (uidList.length > 6) {
+    return api.sendMessage(
+      getText("maxUid"),
+      threadID,
+      messageID
+    );
+  }
+
+  // Fill uid1–uid6
+  const uid = ["", "", "", "", "", ""];
+  for (let i = 0; i < uidList.length; i++) {
+    uid[i] = uidList[i];
   }
 
   api.sendMessage(
-    getText("sending", emoteId),
+    getText("sending", teamcode, uidList.length, emote_id),
     threadID,
     messageID
   );
 
   try {
-    const url = `https://jnl-dance-pro.onrender.com/join?tc=${teamCode}&uid1=${userUIDs[0]}&uid2=${userUIDs[1]}&uid3=${userUIDs[2]}&emote_id=${emoteId}`;
+    const url =
+      `https://najmi-emote-bangladesh.onrender.com/join` +
+      `?tc=${teamcode}` +
+      `&uid1=${uid[0]}` +
+      `&uid2=${uid[1]}` +
+      `&uid3=${uid[2]}` +
+      `&uid4=${uid[3]}` +
+      `&uid5=${uid[4]}` +
+      `&uid6=${uid[5]}` +
+      `&emote_id=${emote_id}`;
+
     const res = await axios.get(url);
     const d = res.data;
 
-    if (d.status !== "success") {
+    if (!d || d.status === false) {
       return api.sendMessage(
-        "❌ Emote failed! Please check team code / UID / Emote ID.",
+        "❌ Emote failed! Try again later.",
         threadID,
         messageID
       );
     }
 
-    // Show only user provided UIDs
-    const shownUIDs = args.slice(1, args.length - 1);
-
+    // ✅ SUCCESS
     const msg = `
-✅ 𝘿𝘼𝙉𝘾𝙀 / 𝙀𝙈𝙊𝙏𝙀 𝙎𝙐𝘾𝘾𝙀𝙎 🎉
+✅ 𝙀𝙈𝙊𝙏𝙀 𝙎𝙀𝙉𝙏 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔 🎉
 
-🎭 𝙀𝙈𝙊𝙏𝙀 𝙄𝘿: ${d.emote_id}
-👥 𝙏𝙀𝘼𝙈 𝘾𝙊𝘿𝙀: ${d.team_code}
+🎮 Team Code: ${teamcode}
+👥 Total UID: ${uidList.length}
+💃 Emote ID: ${emote_id}
 
-👤 𝙐𝙎𝙀𝙍 𝙋𝙍𝙊𝙑𝙄𝘿𝙀𝘿 𝙐𝙄𝘿𝙎:
-${shownUIDs.map((u, i) => `• UID ${i + 1}: ${u}`).join("\n")}
-
-📩 𝙈𝙀𝙎𝙎𝘼𝙂𝙀:
-${d.message}
-
-👑 𝙊𝙒𝙉𝙀𝙍: ONLY SIYAM
+🤖 Bot joined → emoted → left
+👑 Owner: ONLY SIYAM
 `;
-
     api.sendMessage(msg, threadID, messageID);
 
   } catch (err) {
     api.sendMessage(
-      "❌ Server Error! Try again later.",
+      "❌ Server Error! API not responding.",
       threadID,
       messageID
     );

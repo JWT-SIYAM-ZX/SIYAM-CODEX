@@ -59,7 +59,7 @@ module.exports.run = async function ({ api, event, args, getText }) {
 
   try {
     const url =
-      `https://najmi-emote-bangladesh.onrender.com/join` +
+      `https://emote-bot-1-cyug.onrender.com/join` +
       `?tc=${teamcode}` +
       `&uid1=${uid[0]}` +
       `&uid2=${uid[1]}` +
